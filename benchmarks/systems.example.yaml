@@ -1,0 +1,9 @@
+systems:
+  - name: haykal
+    track: step-caller
+    version: "sha256:replace-with-built-wheel-digest"
+    command: ["/absolute/path/to/haykal-benchmark-adapter"]
+  - name: agent-device
+    track: step-caller
+    version: "git:replace-with-exact-commit"
+    command: ["/absolute/path/to/agent-device-benchmark-adapter"]

@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "haykal": {
+      "command": "/absolute/path/to/haykal",
+      "args": [
+        "--state-dir",
+        "/private/haykal-state",
+        "mcp",
+        "--device",
+        "emulator-5554",
+        "--session-id",
+        "agent-phone"
+      ]
+    }
+  }
+}

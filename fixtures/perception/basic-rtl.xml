@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<hierarchy rotation="0">
+  <node index="0" text="" resource-id="dev.haykal:id/root" class="android.widget.FrameLayout" package="dev.haykal" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" selected="false" bounds="[0,0][1080,2400]" visible-to-user="true">
+    <node index="0" text="ابحث عن بيتزا" resource-id="dev.haykal:id/search" class="android.widget.EditText" package="dev.haykal" content-desc="بحث" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="true" scrollable="false" selected="false" bounds="[40,120][1040,260]" visible-to-user="true" editable="true" />
+    <node index="1" text="" resource-id="dev.haykal:id/results" class="androidx.recyclerview.widget.RecyclerView" package="dev.haykal" content-desc="قائمة النتائج" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="true" selected="false" bounds="[0,300][1080,2100]" visible-to-user="true">
+      <node index="0" text="بيتزا مارغريتا" resource-id="dev.haykal:id/title" class="android.widget.TextView" package="dev.haykal" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" selected="false" bounds="[500,360][1000,440]" visible-to-user="true" />
+      <node index="1" text="٣٩٫٩٥ ر.س" resource-id="dev.haykal:id/price" class="android.widget.TextView" package="dev.haykal" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" focused="false" scrollable="false" selected="false" bounds="[700,450][1000,530]" visible-to-user="true" />
+      <node index="2" text="أضف للسلة" resource-id="dev.haykal:id/add" class="android.widget.Button" package="dev.haykal" content-desc="إضافة بيتزا مارغريتا" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" focused="false" scrollable="false" selected="false" bounds="[700,550][1000,670]" visible-to-user="true" />
+    </node>
+  </node>
+</hierarchy>

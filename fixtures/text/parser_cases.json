@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "money": [
+    {"raw": "٥٥٫٢٠ ر.س", "amount": "55.20", "currency": "SAR", "digits": "arabic-indic"},
+    {"raw": "۱۲۳٫۴۵ SAR", "amount": "123.45", "currency": "SAR", "digits": "extended-arabic-indic"},
+    {"raw": "1,234.50 ريال", "amount": "1234.50", "currency": "SAR", "digits": "latin"},
+    {"raw": "AED 42", "amount": "42", "currency": "AED", "digits": "latin"},
+    {"raw": "٩ د.ك", "amount": "9", "currency": "KWD", "digits": "arabic-indic"},
+    {"raw": "$12.75", "amount": "12.75", "currency": "USD", "digits": "latin"},
+    {"raw": "€ 8", "amount": "8", "currency": "EUR", "digits": "latin"},
+    {"raw": "١2۳ ر.س", "amount": "123", "currency": "SAR", "digits": "mixed"},
+    {"raw": "75", "amount": "75", "currency": null, "digits": "latin"}
+  ],
+  "duration": [
+    {"raw": "٣٠-٤٠ دقيقة", "min_minutes": 30, "max_minutes": 40, "digits": "arabic-indic"},
+    {"raw": "25 min", "min_minutes": 25, "max_minutes": 25, "digits": "latin"},
+    {"raw": "۱-۲ ساعة", "min_minutes": 60, "max_minutes": 120, "digits": "extended-arabic-indic"},
+    {"raw": "45 دقائق", "min_minutes": 45, "max_minutes": 45, "digits": "latin"}
+  ]
+}
+

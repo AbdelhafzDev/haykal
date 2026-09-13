@@ -1,0 +1,704 @@
+{
+  "$defs": {
+    "Expectation": {
+      "additionalProperties": false,
+      "properties": {
+        "all": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Expectation"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "All"
+        },
+        "any": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Expectation"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Any"
+        },
+        "foreground_package": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Foreground Package"
+        },
+        "not": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Expectation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "not_visible": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Selector"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "scene_changed": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scene Changed"
+        },
+        "scene_stable": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scene Stable"
+        },
+        "schema_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "settle": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SettlePolicy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "state_equals": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StatePredicate"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "text_contains": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextPredicate"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text Contains"
+        },
+        "text_equals": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextPredicate"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text Equals"
+        },
+        "timeout_ms": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timeout Ms"
+        },
+        "value_equals": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ValuePredicate"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "visible": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Selector"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "Expectation",
+      "type": "object"
+    },
+    "Near": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "enum": [
+            "left",
+            "right",
+            "above",
+            "below",
+            "overlap"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "max_px": {
+          "exclusiveMinimum": 0,
+          "title": "Max Px",
+          "type": "integer"
+        },
+        "selector": {
+          "$ref": "#/$defs/Selector"
+        }
+      },
+      "required": [
+        "selector",
+        "direction",
+        "max_px"
+      ],
+      "title": "Near",
+      "type": "object"
+    },
+    "ResourceMatch": {
+      "additionalProperties": false,
+      "properties": {
+        "ends_with": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ends With"
+        },
+        "equals": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Equals"
+        },
+        "regex": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Regex"
+        }
+      },
+      "title": "ResourceMatch",
+      "type": "object"
+    },
+    "Selector": {
+      "additionalProperties": false,
+      "properties": {
+        "checked": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Checked"
+        },
+        "element_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Element Id"
+        },
+        "enabled": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Enabled"
+        },
+        "focused": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Focused"
+        },
+        "index": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Index"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextMatch"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "near": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Near"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "position": {
+          "anyOf": [
+            {
+              "enum": [
+                "first",
+                "last",
+                "index"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Position"
+        },
+        "resource_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ResourceMatch"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "role": {
+          "anyOf": [
+            {
+              "enum": [
+                "button",
+                "textbox",
+                "text",
+                "image",
+                "checkbox",
+                "radio",
+                "switch",
+                "list",
+                "list_item",
+                "tab",
+                "dialog",
+                "container",
+                "webview",
+                "unknown"
+              ],
+              "type": "string"
+            },
+            {
+              "items": {
+                "enum": [
+                  "button",
+                  "textbox",
+                  "text",
+                  "image",
+                  "checkbox",
+                  "radio",
+                  "switch",
+                  "list",
+                  "list_item",
+                  "tab",
+                  "dialog",
+                  "container",
+                  "webview",
+                  "unknown"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Role"
+        },
+        "scene_revision": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scene Revision"
+        },
+        "scrollable": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scrollable"
+        },
+        "selected": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Selected"
+        },
+        "semantic_name": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9_]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Semantic Name"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextMatch"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "within": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Selector"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "Selector",
+      "type": "object"
+    },
+    "SettlePolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "interval_ms": {
+          "default": 250,
+          "exclusiveMinimum": 0,
+          "title": "Interval Ms",
+          "type": "integer"
+        },
+        "stable_samples": {
+          "default": 2,
+          "exclusiveMinimum": 0,
+          "title": "Stable Samples",
+          "type": "integer"
+        }
+      },
+      "title": "SettlePolicy",
+      "type": "object"
+    },
+    "StatePredicate": {
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "enabled",
+            "focused",
+            "checked",
+            "selected",
+            "scrollable"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "target": {
+          "$ref": "#/$defs/Selector"
+        },
+        "value": {
+          "title": "Value",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "target",
+        "state",
+        "value"
+      ],
+      "title": "StatePredicate",
+      "type": "object"
+    },
+    "TextMatch": {
+      "additionalProperties": false,
+      "properties": {
+        "any_contains": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Any Contains"
+        },
+        "contains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Contains"
+        },
+        "equals": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Equals"
+        },
+        "normalization": {
+          "default": "arabic-search@1",
+          "enum": [
+            "arabic-search@1",
+            "arabic-material@1"
+          ],
+          "title": "Normalization",
+          "type": "string"
+        },
+        "regex": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Regex"
+        },
+        "similar": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Similar"
+        },
+        "threshold": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Threshold"
+        }
+      },
+      "title": "TextMatch",
+      "type": "object"
+    },
+    "TextPredicate": {
+      "additionalProperties": false,
+      "properties": {
+        "target": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Selector"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "value": {
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "title": "TextPredicate",
+      "type": "object"
+    },
+    "ValuePredicate": {
+      "additionalProperties": false,
+      "properties": {
+        "target": {
+          "$ref": "#/$defs/Selector"
+        },
+        "type": {
+          "enum": [
+            "number",
+            "money",
+            "rating",
+            "duration"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value"
+        }
+      },
+      "required": [
+        "target",
+        "type",
+        "value"
+      ],
+      "title": "ValuePredicate",
+      "type": "object"
+    }
+  },
+  "$ref": "#/$defs/Expectation"
+}

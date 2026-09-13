@@ -1,0 +1,72 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "action_intent_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Action Intent Digest",
+      "type": "string"
+    },
+    "evidence_scene_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Evidence Scene Digest",
+      "type": "string"
+    },
+    "expires_at": {
+      "format": "date-time",
+      "title": "Expires At",
+      "type": "string"
+    },
+    "gate_id": {
+      "title": "Gate Id",
+      "type": "string"
+    },
+    "material": {
+      "additionalProperties": true,
+      "title": "Material",
+      "type": "object"
+    },
+    "material_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Material Digest",
+      "type": "string"
+    },
+    "nonce": {
+      "title": "Nonce",
+      "type": "string"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "skill_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Skill Digest",
+      "type": "string"
+    },
+    "target_fingerprint": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Target Fingerprint",
+      "type": "string"
+    }
+  },
+  "required": [
+    "gate_id",
+    "run_id",
+    "skill_digest",
+    "action_intent_digest",
+    "target_fingerprint",
+    "material",
+    "material_digest",
+    "evidence_scene_digest",
+    "expires_at",
+    "nonce"
+  ],
+  "title": "ApprovalChallenge",
+  "type": "object"
+}

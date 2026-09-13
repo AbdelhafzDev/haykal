@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "base_cases": [
+    {"input": "إتمام الطلب", "search": "اتمام الطلب", "material": "اتمام الطلب"},
+    {"input": "مدرسة", "search": "مدرسه", "material": "مدرسة"},
+    {"input": "بيتزا HUT", "search": "بيتزا hut", "material": "بيتزا hut"},
+    {"input": "السَّلَامُ", "search": "السلام", "material": "السلام"},
+    {"input": "مــرحبا", "search": "مرحبا", "material": "مرحبا"},
+    {"input": "١٢٣٫٤٥ ر.س", "search": "123.45 ر.س", "material": "123.45 ر.س"},
+    {"input": "۱۲۳٬۴۵۶", "search": "123,456", "material": "123,456"},
+    {"input": "کباب یمنی", "search": "كباب يمني", "material": "كباب يمني"},
+    {"input": "إلى المنزل", "search": "الي المنزل", "material": "الي المنزل"},
+    {"input": "آيس كريم", "search": "ايس كريم", "material": "ايس كريم"},
+    {"input": "ٱلطَّلَب", "search": "الطلب", "material": "الطلب"},
+    {"input": "بطاقة محفوظة", "search": "بطاقه محفوظه", "material": "بطاقة محفوظة"},
+    {"input": "Address منزل", "search": "address منزل", "material": "address منزل"},
+    {"input": "السعر، شامل", "search": "السعر, شامل", "material": "السعر, شامل"},
+    {"input": "١2۳", "search": "123", "material": "123"}
+  ],
+  "wrappers": [
+    {"prefix": "", "suffix": ""},
+    {"prefix": " ", "suffix": " "},
+    {"prefix": "  ", "suffix": "  "},
+    {"prefix": "\t", "suffix": "\n"},
+    {"prefix": "\n", "suffix": "\t"},
+    {"prefix": "\u200e", "suffix": ""},
+    {"prefix": "\u200f", "suffix": ""},
+    {"prefix": "\u202a", "suffix": "\u202c"},
+    {"prefix": "\u202b", "suffix": "\u202c"},
+    {"prefix": "\u202d", "suffix": "\u202c"},
+    {"prefix": "\u202e", "suffix": "\u202c"},
+    {"prefix": "\u2066", "suffix": "\u2069"},
+    {"prefix": "\u2067", "suffix": "\u2069"},
+    {"prefix": "\u2068", "suffix": "\u2069"},
+    {"prefix": " \u200f", "suffix": "\u200e "},
+    {"prefix": "\t\u202b", "suffix": "\u202c\n"},
+    {"prefix": "\n\u2067", "suffix": "\u2069\t"},
+    {"prefix": "   \u200e", "suffix": "   "},
+    {"prefix": "\u2066  ", "suffix": "  \u2069"},
+    {"prefix": "\u202a\t", "suffix": "\n\u202c"},
+    {"prefix": "\u200f\n", "suffix": "\t\u200e"}
+  ]
+}
+

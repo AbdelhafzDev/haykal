@@ -1,0 +1,387 @@
+{
+  "$defs": {
+    "Bounds": {
+      "additionalProperties": false,
+      "properties": {
+        "bottom": {
+          "title": "Bottom",
+          "type": "integer"
+        },
+        "left": {
+          "title": "Left",
+          "type": "integer"
+        },
+        "right": {
+          "title": "Right",
+          "type": "integer"
+        },
+        "top": {
+          "title": "Top",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "left",
+        "top",
+        "right",
+        "bottom"
+      ],
+      "title": "Bounds",
+      "type": "object"
+    },
+    "ElementFingerprint": {
+      "additionalProperties": false,
+      "properties": {
+        "ancestry": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Ancestry",
+          "type": "array"
+        },
+        "resource_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Resource Id"
+        },
+        "text_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text Key"
+        }
+      },
+      "title": "ElementFingerprint",
+      "type": "object"
+    },
+    "ElementState": {
+      "additionalProperties": false,
+      "properties": {
+        "checked": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Checked"
+        },
+        "enabled": {
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "focused": {
+          "title": "Focused",
+          "type": "boolean"
+        },
+        "scrollable": {
+          "title": "Scrollable",
+          "type": "boolean"
+        },
+        "selected": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Selected"
+        },
+        "visible": {
+          "title": "Visible",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "enabled",
+        "visible",
+        "focused",
+        "scrollable"
+      ],
+      "title": "ElementState",
+      "type": "object"
+    },
+    "PropertyEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "sources": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Sources",
+          "type": "array"
+        }
+      },
+      "required": [
+        "confidence",
+        "sources"
+      ],
+      "title": "PropertyEvidence",
+      "type": "object"
+    },
+    "SceneQuality": {
+      "additionalProperties": false,
+      "properties": {
+        "accessibility_coverage": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Accessibility Coverage",
+          "type": "number"
+        },
+        "fallbacks_used": {
+          "items": {
+            "enum": [
+              "ocr",
+              "vision"
+            ],
+            "type": "string"
+          },
+          "title": "Fallbacks Used",
+          "type": "array"
+        },
+        "score": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Score",
+          "type": "number"
+        }
+      },
+      "required": [
+        "score",
+        "accessibility_coverage"
+      ],
+      "title": "SceneQuality",
+      "type": "object"
+    },
+    "SemanticElement": {
+      "additionalProperties": false,
+      "properties": {
+        "actions": {
+          "items": {
+            "enum": [
+              "tap",
+              "input_text",
+              "scroll",
+              "check",
+              "select"
+            ],
+            "type": "string"
+          },
+          "title": "Actions",
+          "type": "array"
+        },
+        "bounds": {
+          "$ref": "#/$defs/Bounds"
+        },
+        "fingerprint": {
+          "$ref": "#/$defs/ElementFingerprint"
+        },
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        },
+        "label_normalized": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label Normalized"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent"
+        },
+        "properties": {
+          "additionalProperties": {
+            "$ref": "#/$defs/PropertyEvidence"
+          },
+          "title": "Properties",
+          "type": "object"
+        },
+        "resource_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Resource Id"
+        },
+        "role": {
+          "enum": [
+            "button",
+            "textbox",
+            "text",
+            "image",
+            "checkbox",
+            "radio",
+            "switch",
+            "list",
+            "list_item",
+            "tab",
+            "dialog",
+            "container",
+            "webview",
+            "unknown"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/$defs/ElementState"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text"
+        },
+        "text_normalized": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text Normalized"
+        }
+      },
+      "required": [
+        "id",
+        "role",
+        "bounds",
+        "state",
+        "actions",
+        "properties",
+        "fingerprint"
+      ],
+      "title": "SemanticElement",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Digest",
+      "type": "string"
+    },
+    "elements": {
+      "items": {
+        "$ref": "#/$defs/SemanticElement"
+      },
+      "title": "Elements",
+      "type": "array"
+    },
+    "observation_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Observation Id"
+    },
+    "quality": {
+      "$ref": "#/$defs/SceneQuality"
+    },
+    "revision": {
+      "minimum": 0,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "scene_id": {
+      "minLength": 1,
+      "title": "Scene Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "session_id": {
+      "minLength": 1,
+      "title": "Session Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "scene_id",
+    "session_id",
+    "revision",
+    "digest",
+    "quality",
+    "elements"
+  ],
+  "title": "SemanticScene",
+  "type": "object"
+}

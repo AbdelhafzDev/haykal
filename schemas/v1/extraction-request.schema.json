@@ -1,0 +1,711 @@
+{
+  "$defs": {
+    "ExtractionField": {
+      "additionalProperties": false,
+      "properties": {
+        "default_when_absent": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Default When Absent"
+        },
+        "false_tokens": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "False Tokens"
+        },
+        "privacy": {
+          "default": "public",
+          "enum": [
+            "public",
+            "masked",
+            "secret"
+          ],
+          "title": "Privacy",
+          "type": "string"
+        },
+        "required": {
+          "default": false,
+          "title": "Required",
+          "type": "boolean"
+        },
+        "scale": {
+          "anyOf": [
+            {
+              "enum": [
+                5,
+                10
+              ],
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scale"
+        },
+        "selector": {
+          "$ref": "#/$defs/Selector"
+        },
+        "true_tokens": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "True Tokens"
+        },
+        "type": {
+          "enum": [
+            "text",
+            "number",
+            "money",
+            "rating",
+            "duration",
+            "boolean",
+            "image_crop"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "selector",
+        "type"
+      ],
+      "title": "ExtractionField",
+      "type": "object"
+    },
+    "ExtractionGroup": {
+      "additionalProperties": false,
+      "properties": {
+        "band_px": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Band Px"
+        },
+        "by": {
+          "enum": [
+            "single",
+            "ancestry",
+            "repeat",
+            "rows"
+          ],
+          "title": "By",
+          "type": "string"
+        },
+        "record": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Selector"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "root": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Selector"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "by"
+      ],
+      "title": "ExtractionGroup",
+      "type": "object"
+    },
+    "ExtractionLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "max_ms": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Ms"
+        },
+        "max_records": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Records"
+        }
+      },
+      "title": "ExtractionLimits",
+      "type": "object"
+    },
+    "Near": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "enum": [
+            "left",
+            "right",
+            "above",
+            "below",
+            "overlap"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "max_px": {
+          "exclusiveMinimum": 0,
+          "title": "Max Px",
+          "type": "integer"
+        },
+        "selector": {
+          "$ref": "#/$defs/Selector"
+        }
+      },
+      "required": [
+        "selector",
+        "direction",
+        "max_px"
+      ],
+      "title": "Near",
+      "type": "object"
+    },
+    "ResourceMatch": {
+      "additionalProperties": false,
+      "properties": {
+        "ends_with": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ends With"
+        },
+        "equals": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Equals"
+        },
+        "regex": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Regex"
+        }
+      },
+      "title": "ResourceMatch",
+      "type": "object"
+    },
+    "ScrollExtraction": {
+      "additionalProperties": false,
+      "properties": {
+        "max_pages": {
+          "exclusiveMinimum": 0,
+          "title": "Max Pages",
+          "type": "integer"
+        },
+        "settle": {
+          "$ref": "#/$defs/SettlePolicy"
+        },
+        "within": {
+          "$ref": "#/$defs/Selector"
+        }
+      },
+      "required": [
+        "within",
+        "max_pages"
+      ],
+      "title": "ScrollExtraction",
+      "type": "object"
+    },
+    "Selector": {
+      "additionalProperties": false,
+      "properties": {
+        "checked": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Checked"
+        },
+        "element_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Element Id"
+        },
+        "enabled": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Enabled"
+        },
+        "focused": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Focused"
+        },
+        "index": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Index"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextMatch"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "near": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Near"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "position": {
+          "anyOf": [
+            {
+              "enum": [
+                "first",
+                "last",
+                "index"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Position"
+        },
+        "resource_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ResourceMatch"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "role": {
+          "anyOf": [
+            {
+              "enum": [
+                "button",
+                "textbox",
+                "text",
+                "image",
+                "checkbox",
+                "radio",
+                "switch",
+                "list",
+                "list_item",
+                "tab",
+                "dialog",
+                "container",
+                "webview",
+                "unknown"
+              ],
+              "type": "string"
+            },
+            {
+              "items": {
+                "enum": [
+                  "button",
+                  "textbox",
+                  "text",
+                  "image",
+                  "checkbox",
+                  "radio",
+                  "switch",
+                  "list",
+                  "list_item",
+                  "tab",
+                  "dialog",
+                  "container",
+                  "webview",
+                  "unknown"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Role"
+        },
+        "scene_revision": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scene Revision"
+        },
+        "scrollable": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scrollable"
+        },
+        "selected": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Selected"
+        },
+        "semantic_name": {
+          "anyOf": [
+            {
+              "pattern": "^[a-z][a-z0-9_]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Semantic Name"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextMatch"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "within": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Selector"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "Selector",
+      "type": "object"
+    },
+    "SettlePolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "interval_ms": {
+          "default": 250,
+          "exclusiveMinimum": 0,
+          "title": "Interval Ms",
+          "type": "integer"
+        },
+        "stable_samples": {
+          "default": 2,
+          "exclusiveMinimum": 0,
+          "title": "Stable Samples",
+          "type": "integer"
+        }
+      },
+      "title": "SettlePolicy",
+      "type": "object"
+    },
+    "TextMatch": {
+      "additionalProperties": false,
+      "properties": {
+        "any_contains": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Any Contains"
+        },
+        "contains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Contains"
+        },
+        "equals": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Equals"
+        },
+        "normalization": {
+          "default": "arabic-search@1",
+          "enum": [
+            "arabic-search@1",
+            "arabic-material@1"
+          ],
+          "title": "Normalization",
+          "type": "string"
+        },
+        "regex": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Regex"
+        },
+        "similar": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Similar"
+        },
+        "threshold": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Threshold"
+        }
+      },
+      "title": "TextMatch",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "dedupe_by": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Dedupe By",
+      "type": "array"
+    },
+    "fields": {
+      "additionalProperties": {
+        "$ref": "#/$defs/ExtractionField"
+      },
+      "minProperties": 1,
+      "title": "Fields",
+      "type": "object"
+    },
+    "group": {
+      "$ref": "#/$defs/ExtractionGroup"
+    },
+    "limits": {
+      "$ref": "#/$defs/ExtractionLimits"
+    },
+    "require_sources": {
+      "items": {
+        "enum": [
+          "accessibility",
+          "ocr",
+          "vision"
+        ],
+        "type": "string"
+      },
+      "title": "Require Sources",
+      "type": "array"
+    },
+    "scene_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Scene Id"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scroll": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ScrollExtraction"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "group",
+    "fields"
+  ],
+  "title": "ExtractionRequest",
+  "type": "object"
+}

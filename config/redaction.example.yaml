@@ -1,0 +1,23 @@
+name: private-default-v1
+replacement: "<redacted>"
+include_images: false
+sensitive_keys:
+  - address
+  - authorization
+  - card
+  - email
+  - nonce
+  - otp
+  - password
+  - payment
+  - phone
+  - private_key
+  - secret
+  - token
+literal_secrets: []
+image_regions: []
+
+# To export a screenshot, opt in and declare pixel regions to obscure:
+# include_images: true
+# image_regions:
+#   - {artifact: "*", left: 0, top: 1700, right: 1080, bottom: 2200}

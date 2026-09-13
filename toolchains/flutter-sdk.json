@@ -1,0 +1,8 @@
+{
+  "channel": "stable",
+  "version": "3.47.4",
+  "macos_arm64": {
+    "archive": "https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/flutter_macos_arm64_3.47.4-stable.zip",
+    "sha256": "c6af6fa1d64946167b8637ba4c5a7bb3b8574729a1ebe931decd4924dbab7061"
+  }
+}

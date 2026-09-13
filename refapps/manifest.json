@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "fault_control": {
+    "action": "dev.haykal.refapp.SET_FAULT",
+    "extras": {"name": "string", "enabled": "boolean"},
+    "reset_action": "dev.haykal.refapp.RESET"
+  },
+  "apps": [
+    {
+      "name": "matjar",
+      "package": "dev.haykal.refapps.matjar",
+      "technologies": ["android-view", "jetpack-compose", "webview"],
+      "locales": ["ar-SA", "en-US"],
+      "screens": [
+        "view-baseline", "compose-lazy-list", "webview-storefront", "home", "search",
+        "results", "merchant-menu", "product-options", "basket", "checkout",
+        "confirmation", "orders"
+      ],
+      "faults": [
+        "promo_modal", "price_change", "payment_decline", "submit_timeout",
+        "submit_created_no_confirm", "option_unavailable", "minimum_order",
+        "address_out_of_area", "otp_challenge", "sparse_cards",
+        "arabic_indic_digits", "slow_settle", "duplicate_labels"
+      ]
+    },
+    {
+      "name": "flutter-sparse",
+      "package": "dev.haykal.refapps.flutter_sparse",
+      "technologies": ["flutter"],
+      "locales": ["ar-SA", "en-US"],
+      "screens": ["semantics-on", "semantics-off", "image-price-card"],
+      "faults": ["arabic_indic_digits", "slow_settle", "duplicate_labels"]
+    }
+  ]
+}

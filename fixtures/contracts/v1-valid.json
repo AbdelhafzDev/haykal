@@ -1,0 +1,89 @@
+{
+  "observation": {
+    "schema_version": "1.0",
+    "observation_id": "obs_1",
+    "session_id": "ses_1",
+    "revision": 1,
+    "display": {"width": 1080, "height": 2400, "density": 2.75, "rotation": 0},
+    "foreground": {"package": "dev.haykal.matjar", "activity": ".MainActivity"},
+    "keyboard": {"visible": false},
+    "hierarchy": {"artifact": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "captured_at": "2026-09-13T10:00:00Z", "backend": "uiautomator2"},
+    "screenshot": {"artifact": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "media_type": "image/png", "captured_at": "2026-09-13T10:00:00.100Z", "backend": "adb-screencap"},
+    "capture_skew_ms": 100,
+    "warnings": []
+  },
+  "scene": {
+    "schema_version": "1.0",
+    "scene_id": "scn_1",
+    "observation_id": "obs_1",
+    "session_id": "ses_1",
+    "revision": 1,
+    "digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "quality": {"score": 0.9, "accessibility_coverage": 0.8, "fallbacks_used": []},
+    "elements": []
+  },
+  "selector": {"semantic_name": "search_box"},
+  "action": {
+    "schema_version": "1.0",
+    "action_id": "act_1",
+    "kind": "tap",
+    "target": {"selector": {"semantic_name": "search_box"}},
+    "resolution": {"minimum_score": 0.8, "ambiguity_margin": 0.1},
+    "risk": {"category": "navigation", "gate": "none"}
+  },
+  "extraction-request": {
+    "schema_version": "1.0",
+    "scene_id": "scn_1",
+    "require_sources": ["accessibility"],
+    "group": {"by": "single"},
+    "fields": {"total": {"selector": {"semantic_name": "total"}, "type": "money", "required": true, "privacy": "public"}},
+    "dedupe_by": [],
+    "limits": {}
+  },
+  "expectation": {
+    "schema_version": "1.0",
+    "timeout_ms": 5000,
+    "visible": {"semantic_name": "search_box"}
+  },
+  "runtime-event": {
+    "schema_version": "1.0",
+    "run_id": "run_1",
+    "sequence": 1,
+    "event_type": "run.started",
+    "occurred_at": "2026-09-13T10:00:00Z",
+    "payload": {}
+  },
+  "trace": {
+    "schema_version": "1.0",
+    "run_id": "run_1",
+    "sequence": 1,
+    "event_type": "run.started",
+    "occurred_at": "2026-09-13T10:00:00Z",
+    "payload": {},
+    "trace_id": "trc_1",
+    "artifacts": [],
+    "redaction": {"policy": "default", "applied": true}
+  },
+  "run-result": {
+    "schema_version": "1.0",
+    "run_id": "run_1",
+    "status": "completed",
+    "skill": "refapp.smoke@1.0.0",
+    "inputs_echo": {},
+    "outputs": {},
+    "extractions": [],
+    "approval": null,
+    "stats": {"steps": 0, "model_calls": 0, "decisions": 0, "gates": 0, "duration_s": 0},
+    "trace_id": "trc_1"
+  },
+  "skill": {
+    "schema_version": "1.0",
+    "kind": "skill",
+    "metadata": {"name": "refapp.smoke", "version": "1.0.0", "package": "dev.haykal.matjar", "app_versions": ">=1,<2", "locales": ["ar-SA"]},
+    "inputs": {},
+    "elements": {"search_box": {"role": "textbox", "label": {"contains": "بحث"}}},
+    "start": "ready",
+    "states": {"ready": {"expect": {"visible": {"semantic_name": "search_box"}}, "terminal": "completed"}}
+  }
+}
+

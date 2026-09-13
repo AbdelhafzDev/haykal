@@ -1,0 +1,246 @@
+{
+  "$defs": {
+    "ExtractedRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "ambiguities": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Ambiguities",
+          "type": "array"
+        },
+        "anchor": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RecordAnchor"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "evidence": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/FieldEvidence"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Evidence",
+          "type": "object"
+        },
+        "fields": {
+          "additionalProperties": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Fields",
+          "type": "object"
+        },
+        "record_id": {
+          "title": "Record Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_id",
+        "fields",
+        "evidence"
+      ],
+      "title": "ExtractedRecord",
+      "type": "object"
+    },
+    "FieldEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "element_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Element Ids",
+          "type": "array"
+        },
+        "scene_id": {
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "sources": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Sources",
+          "type": "array"
+        }
+      },
+      "required": [
+        "scene_id",
+        "element_ids",
+        "sources"
+      ],
+      "title": "FieldEvidence",
+      "type": "object"
+    },
+    "RecordAnchor": {
+      "additionalProperties": false,
+      "properties": {
+        "element_id": {
+          "title": "Element Id",
+          "type": "string"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "scene_revision": {
+          "minimum": 0,
+          "title": "Scene Revision",
+          "type": "integer"
+        },
+        "scroll_checkpoint": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ScrollCheckpoint"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "element_id",
+        "scene_revision",
+        "fingerprint"
+      ],
+      "title": "RecordAnchor",
+      "type": "object"
+    },
+    "ScrollCheckpoint": {
+      "additionalProperties": false,
+      "properties": {
+        "container": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Container"
+        },
+        "page": {
+          "minimum": 0,
+          "title": "Page",
+          "type": "integer"
+        },
+        "visible_signature": {
+          "title": "Visible Signature",
+          "type": "string"
+        }
+      },
+      "required": [
+        "page",
+        "visible_signature"
+      ],
+      "title": "ScrollCheckpoint",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "dropped_records": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Dropped Records",
+      "type": "array"
+    },
+    "effective_scene_id": {
+      "title": "Effective Scene Id",
+      "type": "string"
+    },
+    "extraction_id": {
+      "title": "Extraction Id",
+      "type": "string"
+    },
+    "input_scene_id": {
+      "title": "Input Scene Id",
+      "type": "string"
+    },
+    "records": {
+      "items": {
+        "$ref": "#/$defs/ExtractedRecord"
+      },
+      "title": "Records",
+      "type": "array"
+    },
+    "request_satisfied": {
+      "title": "Request Satisfied",
+      "type": "boolean"
+    },
+    "scenes": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Scenes",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_exhausted": {
+      "title": "Source Exhausted",
+      "type": "boolean"
+    },
+    "stop_reason": {
+      "enum": [
+        "end_of_list",
+        "max_records",
+        "max_pages",
+        "max_ms",
+        "no_new_records",
+        "scene_unstable"
+      ],
+      "title": "Stop Reason",
+      "type": "string"
+    },
+    "truncated": {
+      "title": "Truncated",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "extraction_id",
+    "input_scene_id",
+    "effective_scene_id",
+    "scenes",
+    "request_satisfied",
+    "source_exhausted",
+    "truncated",
+    "stop_reason",
+    "records"
+  ],
+  "title": "ExtractionResult",
+  "type": "object"
+}

@@ -1,0 +1,48 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "elapsed_ms": {
+      "minimum": 0,
+      "title": "Elapsed Ms",
+      "type": "integer"
+    },
+    "evidence": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Evidence",
+      "type": "array"
+    },
+    "scene_ids": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Scene Ids",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "passed",
+        "failed",
+        "inconclusive"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "status",
+    "scene_ids",
+    "elapsed_ms"
+  ],
+  "title": "ExpectationResult",
+  "type": "object"
+}

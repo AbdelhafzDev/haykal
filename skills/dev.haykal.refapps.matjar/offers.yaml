@@ -1,0 +1,64 @@
+schema_version: "1.0"
+kind: skill
+metadata:
+  name: matjar.list_pizza_offers
+  version: 1.0.0
+  package: dev.haykal.refapps.matjar
+  app_versions: ">=1.0,<2.0"
+  locales: [ar-SA, en-US]
+
+inputs:
+  query: {type: string, min_length: 1, default: "بيتزا"}
+
+elements:
+  search_button: {role: button, resource_id: {ends_with: "search_button"}}
+  search_box: {role: textbox, resource_id: {ends_with: "search_box"}}
+  show_results: {role: button, resource_id: {ends_with: "show_results"}}
+  results_list: {role: list, resource_id: {ends_with: "results"}}
+  result_card: {resource_id: {regex: "result_[0-9]+$"}, within: {semantic_name: results_list}}
+  restaurant: {role: text, resource_id: {regex: "restaurant_[0-9]+$"}}
+  item_name: {role: text, resource_id: {regex: "item_[0-9]+$"}}
+  rating: {role: text, resource_id: {regex: "rating_[0-9]+$"}}
+  price: {role: text, resource_id: {regex: "price_[0-9]+$"}}
+
+start: open_search
+states:
+  open_search:
+    expect: {visible: {semantic_name: search_button}}
+    action: {kind: tap, target: {semantic_name: search_button}}
+    verify: {visible: {semantic_name: search_box}}
+    next: type_query
+
+  type_query:
+    expect: {visible: {semantic_name: search_box}}
+    action:
+      kind: input_text
+      target: {semantic_name: search_box}
+      text: "${query}"
+      mode: replace
+    verify: {text_equals: {target: {semantic_name: search_box}, value: "${query}"}}
+    next: submit
+
+  submit:
+    expect: {visible: {semantic_name: show_results}}
+    action: {kind: tap, target: {semantic_name: show_results}}
+    verify: {visible: {semantic_name: results_list}}
+    next: collect
+
+  collect:
+    expect: {visible: {semantic_name: results_list}}
+    extract:
+      as: offers
+      group: {by: ancestry, record: {semantic_name: result_card}}
+      fields:
+        restaurant: {selector: {semantic_name: restaurant}, type: text, required: true}
+        item: {selector: {semantic_name: item_name}, type: text, required: true}
+        rating: {selector: {semantic_name: rating}, type: rating, scale: 5, required: true}
+        price: {selector: {semantic_name: price}, type: money, required: true}
+      scroll:
+        within: {semantic_name: results_list}
+        max_pages: 5
+        settle: {stable_samples: 2, interval_ms: 250}
+      dedupe_by: [restaurant, item, price]
+      limits: {max_records: 10, max_ms: 30000}
+    terminal: completed

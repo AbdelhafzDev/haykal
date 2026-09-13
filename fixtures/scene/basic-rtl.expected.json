@@ -1,0 +1,16 @@
+{
+  "digest": "sha256:ee9e88dc4597f48bad2fb97896ad98bd181668421901b8321b622a4fb9e8655a",
+  "quality": {
+    "score": 1.0,
+    "accessibility_coverage": 1.0,
+    "fallbacks_used": []
+  },
+  "elements": [
+    ["el_tmp_746289d41ee10c436103", "container", null, null, "dev.haykal:id/root", null],
+    ["el_tmp_24230f470e04b6fe823b", "textbox", "بحث", "ابحث عن بيتزا", "dev.haykal:id/search", "el_tmp_746289d41ee10c436103"],
+    ["el_tmp_bcf496beb2a6032c84d4", "list", "قائمة النتائج", null, "dev.haykal:id/results", "el_tmp_746289d41ee10c436103"],
+    ["el_tmp_36adbb0f556355e8a99b", "text", null, "بيتزا مارغريتا", "dev.haykal:id/title", "el_tmp_bcf496beb2a6032c84d4"],
+    ["el_tmp_761c9b8da5f220dd2a41", "text", null, "٣٩٫٩٥ ر.س", "dev.haykal:id/price", "el_tmp_bcf496beb2a6032c84d4"],
+    ["el_tmp_594fb8a1515d7b422469", "button", "إضافة بيتزا مارغريتا", "أضف للسلة", "dev.haykal:id/add", "el_tmp_bcf496beb2a6032c84d4"]
+  ]
+}

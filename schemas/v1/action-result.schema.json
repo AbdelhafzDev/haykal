@@ -1,0 +1,292 @@
+{
+  "$defs": {
+    "DeviceReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "accepted": {
+          "title": "Accepted",
+          "type": "boolean"
+        },
+        "backend": {
+          "title": "Backend",
+          "type": "string"
+        },
+        "dispatch_status": {
+          "anyOf": [
+            {
+              "enum": [
+                "dispatched",
+                "outcome_unknown"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dispatch Status"
+        },
+        "input_strategy": {
+          "anyOf": [
+            {
+              "enum": [
+                "accessibility_set_text",
+                "helper_ime",
+                "clipboard_paste"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Input Strategy"
+        },
+        "method": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Method"
+        },
+        "parameters_digest": {
+          "anyOf": [
+            {
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parameters Digest"
+        },
+        "repeated_request": {
+          "default": false,
+          "title": "Repeated Request",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "backend",
+        "accepted"
+      ],
+      "title": "DeviceReceipt",
+      "type": "object"
+    },
+    "ResolvedTarget": {
+      "additionalProperties": false,
+      "properties": {
+        "alternatives": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Alternatives",
+          "type": "array"
+        },
+        "dictionary_expansion": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dictionary Expansion"
+        },
+        "element_id": {
+          "title": "Element Id",
+          "type": "string"
+        },
+        "point": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Point",
+          "type": "array"
+        },
+        "scene_revision": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scene Revision"
+        },
+        "score": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Score",
+          "type": "number"
+        },
+        "stale_rebound": {
+          "default": false,
+          "title": "Stale Rebound",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "element_id",
+        "point",
+        "score"
+      ],
+      "title": "ResolvedTarget",
+      "type": "object"
+    },
+    "VerificationSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "status": {
+          "enum": [
+            "passed",
+            "failed",
+            "inconclusive"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "title": "VerificationSummary",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "action_id": {
+      "title": "Action Id",
+      "type": "string"
+    },
+    "attempts": {
+      "minimum": 0,
+      "title": "Attempts",
+      "type": "integer"
+    },
+    "completed_at": {
+      "format": "date-time",
+      "title": "Completed At",
+      "type": "string"
+    },
+    "device_receipt": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DeviceReceipt"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "post_scene": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Post Scene"
+    },
+    "pre_scene": {
+      "title": "Pre Scene",
+      "type": "string"
+    },
+    "resolved_target": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ResolvedTarget"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "started_at": {
+      "format": "date-time",
+      "title": "Started At",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "verified",
+        "executed_unverified",
+        "rejected",
+        "ambiguous",
+        "failed",
+        "outcome_unknown"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "trace_id": {
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "verification": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/VerificationSummary"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "action_id",
+    "status",
+    "attempts",
+    "started_at",
+    "completed_at",
+    "pre_scene",
+    "trace_id"
+  ],
+  "title": "ActionResult",
+  "type": "object"
+}

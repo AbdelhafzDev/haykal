@@ -1,0 +1,25 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "expires_at": {
+      "format": "date-time",
+      "title": "Expires At",
+      "type": "string"
+    },
+    "gate_id": {
+      "title": "Gate Id",
+      "type": "string"
+    },
+    "token": {
+      "title": "Token",
+      "type": "string"
+    }
+  },
+  "required": [
+    "gate_id",
+    "token",
+    "expires_at"
+  ],
+  "title": "ApprovalGrant",
+  "type": "object"
+}

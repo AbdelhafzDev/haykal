@@ -1,0 +1,75 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "haykal-runtime"
+version = "0.0.1"
+description = "Protocol-first semantic runtime for Android automation"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "Proprietary"}
+dependencies = [
+  "cryptography>=45,<51",
+  "defusedxml>=0.7.1,<1",
+  "mcp>=2.2,<3",
+  "pillow>=11,<13",
+  "pydantic>=2.11,<3",
+  "pyyaml>=6.0,<7",
+  "starlette>=0.47,<1",
+  "uiautomator2>=3.2,<4",
+  "uvicorn>=0.35,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "hypothesis>=6.130,<7",
+  "httpx>=0.28,<1",
+  "mypy>=1.15,<2",
+  "pytest>=8.3,<9",
+  "pytest-asyncio>=0.25,<2",
+  "pytest-cov>=6,<7",
+  "ruff>=0.11,<1",
+  "types-defusedxml>=0.7.0.20250516",
+  "types-pyyaml>=6.0.12.20250915",
+]
+
+[project.scripts]
+haykal = "haykal.cli:main"
+haykal-m0 = "haykal.m0.cli:main"
+haykal-m2 = "haykal.m2.cli:main"
+haykal-m3 = "haykal.m3.cli:main"
+haykal-m4 = "haykal.m4.skill_smoke:main"
+haykal-schema = "haykal.contracts.schema:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/haykal"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-markers --cov-fail-under=80"
+testpaths = ["tests"]
+
+[tool.coverage.run]
+omit = [
+  "src/haykal/cli.py",
+  "src/haykal/m0/device_smoke.py",
+  "src/haykal/m2/*",
+  "src/haykal/m3/*",
+  "src/haykal/m4/*",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/haykal/text/*.py" = ["RUF001"]
+"tests/text/*.py" = ["RUF001"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+packages = ["haykal"]

@@ -1,0 +1,153 @@
+schema_version: "1.0"
+kind: skill
+metadata:
+  name: matjar.prepare_pizza_order
+  version: 1.0.0
+  package: dev.haykal.refapps.matjar
+  app_versions: ">=1.0,<2.0"
+  locales: [ar-SA, en-US]
+
+inputs:
+  query: {type: string, min_length: 1, default: "بيتزا"}
+  maximum_total: {type: money, currency: SAR}
+  minimum_rating: {type: number, min: 0, max: 5, default: 4.0}
+
+elements:
+  search_button: {role: button, resource_id: {ends_with: "search_button"}}
+  search_box: {role: textbox, resource_id: {ends_with: "search_box"}}
+  show_results: {role: button, resource_id: {ends_with: "show_results"}}
+  results_list: {role: list, resource_id: {ends_with: "results"}}
+  result_card: {resource_id: {regex: "result_[0-9]+$"}, within: {semantic_name: results_list}}
+  restaurant: {role: text, resource_id: {regex: "restaurant_[0-9]+$"}}
+  item_name: {role: text, resource_id: {regex: "item_[0-9]+$"}}
+  rating: {role: text, resource_id: {regex: "rating_[0-9]+$"}}
+  price: {role: text, resource_id: {regex: "price_[0-9]+$"}}
+  product_name: {role: text, resource_id: {ends_with: "product_name"}}
+  add_to_basket: {role: button, resource_id: {ends_with: "add_to_basket"}}
+  checkout_button: {role: button, resource_id: {ends_with: "checkout_button"}}
+  checkout_merchant: {role: text, resource_id: {ends_with: "checkout_merchant"}}
+  checkout_item: {role: text, resource_id: {ends_with: "checkout_item"}}
+  checkout_address: {role: text, resource_id: {ends_with: "checkout_address"}}
+  checkout_payment: {role: text, resource_id: {ends_with: "checkout_payment"}}
+  total: {role: text, resource_id: {ends_with: "total"}}
+  place_order: {role: button, resource_id: {ends_with: "place_order"}}
+  confirmation: {role: text, resource_id: {ends_with: "confirmation"}}
+  orders_nav: {role: button, resource_id: {ends_with: "orders_nav"}}
+  orders_heading: {role: text, resource_id: {ends_with: "orders_heading"}}
+  order_merchant: {role: text, resource_id: {ends_with: "order_merchant"}}
+  order_total: {role: text, resource_id: {ends_with: "order_total"}}
+
+start: open_search
+states:
+  open_search:
+    expect: {visible: {semantic_name: search_button}}
+    action: {kind: tap, target: {semantic_name: search_button}}
+    verify: {visible: {semantic_name: search_box}}
+    next: type_query
+  type_query:
+    expect: {visible: {semantic_name: search_box}}
+    action: {kind: input_text, target: {semantic_name: search_box}, text: "${query}", mode: replace}
+    verify: {text_equals: {target: {semantic_name: search_box}, value: "${query}"}}
+    next: submit
+  submit:
+    expect: {visible: {semantic_name: show_results}}
+    action: {kind: tap, target: {semantic_name: show_results}}
+    verify: {visible: {semantic_name: results_list}}
+    next: choose
+  choose:
+    expect: {visible: {semantic_name: results_list}}
+    extract:
+      as: candidates
+      group: {by: ancestry, record: {semantic_name: result_card}}
+      fields:
+        restaurant: {selector: {semantic_name: restaurant}, type: text, required: true}
+        item: {selector: {semantic_name: item_name}, type: text, required: true}
+        rating: {selector: {semantic_name: rating}, type: rating, scale: 5, required: true}
+        price: {selector: {semantic_name: price}, type: money, required: true}
+      scroll:
+        within: {semantic_name: results_list}
+        max_pages: 5
+        settle: {stable_samples: 2, interval_ms: 250}
+      dedupe_by: [restaurant, item]
+      limits: {max_records: 12, max_ms: 30000}
+    select:
+      from: candidates
+      where:
+        - {field: rating.value, op: ">=", value: "${minimum_rating}"}
+        - {field: price.amount, op: "<=", value: "${maximum_total.amount}"}
+        - {field: price.currency, op: "==", value: SAR}
+      order_by:
+        - {field: rating.value, direction: desc}
+        - {field: price.amount, direction: asc}
+        - {field: restaurant.normalized, direction: asc}
+      margin: {field: rating.value, min_gap: 0.05}
+      as: chosen
+    action: {kind: tap, target: {record_anchor: chosen}}
+    verify: {visible: {semantic_name: product_name}}
+    next: add
+  add:
+    expect: {visible: {semantic_name: add_to_basket}}
+    action: {kind: tap, target: {semantic_name: add_to_basket}}
+    verify: {visible: {semantic_name: checkout_button}}
+    next: basket
+  basket:
+    expect: {visible: {semantic_name: checkout_button}}
+    action: {kind: tap, target: {semantic_name: checkout_button}}
+    verify: {visible: {semantic_name: place_order}}
+    next: review
+  review:
+    expect: {visible: {semantic_name: place_order}}
+    extract:
+      as: checkout
+      group: {by: single}
+      fields:
+        merchant: {selector: {semantic_name: checkout_merchant}, type: text, required: true}
+        item: {selector: {semantic_name: checkout_item}, type: text, required: true}
+        total: {selector: {semantic_name: total}, type: money, required: true}
+        address: {selector: {semantic_name: checkout_address}, type: text, required: true, privacy: masked}
+        payment: {selector: {semantic_name: checkout_payment}, type: text, required: true, privacy: masked}
+    reconcile:
+      - {field: checkout.total.currency, op: "==", value: SAR}
+      - {field: checkout.total.amount, op: "<=", value: "${maximum_total.amount}"}
+    on_reconcile_failure: {escalate: {reason: checkout_mismatch, allowed_actions: [cancel]}}
+    gate:
+      category: purchase
+      material:
+        merchant: checkout.merchant
+        item: checkout.item
+        total: checkout.total
+        address: checkout.address
+        payment: checkout.payment
+    action: {kind: tap, target: {semantic_name: place_order}}
+    retry: none
+    verify:
+      timeout_ms: 20000
+      any:
+        - {visible: {semantic_name: confirmation}}
+        - {visible: {semantic_name: place_order}}
+    on_action_uncertain: {next: open_orders}
+    on_verify_timeout: {next: open_orders}
+    on_verify_failure: {next: open_orders}
+    branches:
+      - when: {visible: {semantic_name: confirmation}}
+        terminal: completed
+      - otherwise: true
+        next: open_orders
+  open_orders:
+    expect: {visible: {semantic_name: orders_nav}}
+    action: {kind: tap, target: {semantic_name: orders_nav}}
+    verify: {visible: {semantic_name: orders_heading}}
+    next: reconcile_order
+  reconcile_order:
+    expect: {visible: {semantic_name: orders_heading}}
+    extract:
+      as: order
+      group: {by: single}
+      fields:
+        merchant: {selector: {semantic_name: order_merchant}, type: text, required: true}
+        total: {selector: {semantic_name: order_total}, type: money, required: true}
+    reconcile:
+      - {field: order.merchant.normalized, op: "==", value: "${checkout.merchant.normalized}"}
+      - {field: order.total.amount, op: "==", value: "${checkout.total.amount}", tolerance: 0.01}
+    on_reconcile_failure: {terminal: outcome_unknown}
+    terminal: completed_reconciled

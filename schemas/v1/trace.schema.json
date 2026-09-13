@@ -1,0 +1,101 @@
+{
+  "$defs": {
+    "RedactionRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "applied": {
+          "title": "Applied",
+          "type": "boolean"
+        },
+        "policy": {
+          "title": "Policy",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy",
+        "applied"
+      ],
+      "title": "RedactionRecord",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "artifacts": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Artifacts",
+      "type": "array"
+    },
+    "event_type": {
+      "enum": [
+        "run.started",
+        "device.lease_acquired",
+        "observation.created",
+        "extraction.completed",
+        "target.resolved",
+        "action.prepared",
+        "action.dispatched",
+        "verification.completed",
+        "transition.committed",
+        "run.needs_decision",
+        "run.approval_required",
+        "run.approval_stale",
+        "run.resumed",
+        "run.suspended",
+        "run.completed",
+        "run.completed_reconciled",
+        "run.outcome_unknown",
+        "run.failed",
+        "run.cancelled",
+        "device.lease_released"
+      ],
+      "title": "Event Type",
+      "type": "string"
+    },
+    "occurred_at": {
+      "format": "date-time",
+      "title": "Occurred At",
+      "type": "string"
+    },
+    "payload": {
+      "additionalProperties": true,
+      "title": "Payload",
+      "type": "object"
+    },
+    "redaction": {
+      "$ref": "#/$defs/RedactionRecord"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sequence": {
+      "minimum": 0,
+      "title": "Sequence",
+      "type": "integer"
+    },
+    "trace_id": {
+      "title": "Trace Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "sequence",
+    "event_type",
+    "occurred_at",
+    "trace_id",
+    "redaction"
+  ],
+  "title": "TraceEnvelope",
+  "type": "object"
+}

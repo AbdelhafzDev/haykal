@@ -1,0 +1,206 @@
+{
+  "$defs": {
+    "ExtractedRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "ambiguities": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Ambiguities",
+          "type": "array"
+        },
+        "anchor": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RecordAnchor"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "evidence": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/FieldEvidence"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Evidence",
+          "type": "object"
+        },
+        "fields": {
+          "additionalProperties": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Fields",
+          "type": "object"
+        },
+        "record_id": {
+          "title": "Record Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "record_id",
+        "fields",
+        "evidence"
+      ],
+      "title": "ExtractedRecord",
+      "type": "object"
+    },
+    "FieldEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "element_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Element Ids",
+          "type": "array"
+        },
+        "scene_id": {
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "sources": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Sources",
+          "type": "array"
+        }
+      },
+      "required": [
+        "scene_id",
+        "element_ids",
+        "sources"
+      ],
+      "title": "FieldEvidence",
+      "type": "object"
+    },
+    "RecordAnchor": {
+      "additionalProperties": false,
+      "properties": {
+        "element_id": {
+          "title": "Element Id",
+          "type": "string"
+        },
+        "fingerprint": {
+          "title": "Fingerprint",
+          "type": "string"
+        },
+        "scene_revision": {
+          "minimum": 0,
+          "title": "Scene Revision",
+          "type": "integer"
+        },
+        "scroll_checkpoint": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ScrollCheckpoint"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "element_id",
+        "scene_revision",
+        "fingerprint"
+      ],
+      "title": "RecordAnchor",
+      "type": "object"
+    },
+    "ScrollCheckpoint": {
+      "additionalProperties": false,
+      "properties": {
+        "container": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Container"
+        },
+        "page": {
+          "minimum": 0,
+          "title": "Page",
+          "type": "integer"
+        },
+        "visible_signature": {
+          "title": "Visible Signature",
+          "type": "string"
+        }
+      },
+      "required": [
+        "page",
+        "visible_signature"
+      ],
+      "title": "ScrollCheckpoint",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "candidates": {
+      "items": {
+        "$ref": "#/$defs/ExtractedRecord"
+      },
+      "title": "Candidates",
+      "type": "array"
+    },
+    "excluded_null": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Excluded Null",
+      "type": "integer"
+    },
+    "selected": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ExtractedRecord"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "status": {
+      "enum": [
+        "selected",
+        "empty",
+        "margin"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "status"
+  ],
+  "title": "SelectionResult",
+  "type": "object"
+}
