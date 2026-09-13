@@ -71,6 +71,10 @@ Exit criteria:
   implementation fix.
 - CI runs from a fresh checkout rather than the developer's environment.
 
+During P95.0 these regression tests are committed as strict expected failures,
+with issue/phase reasons. An unexpected pass fails CI; the owning remediation
+phase removes the marker and keeps the test as a normal permanent regression.
+
 ## P95.1: effective risk and fail-closed privacy
 
 **Goal:** establish one runtime-controlled policy boundary for every caller and

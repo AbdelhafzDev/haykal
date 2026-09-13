@@ -59,7 +59,7 @@ approval secret must contain at least 32 bytes.
 ```bash
 export HAYKAL_API_TOKEN='caller-secret'
 export HAYKAL_APPROVER_TOKEN='different-approver-secret'
-export HAYKAL_APPROVAL_SECRET='at-least-32-random-bytes-change-me'
+export HAYKAL_APPROVAL_SECRET='at-least-32-random-bytes-change-me' # pragma: allowlist secret
 export HAYKAL_TRUST_POLICY="$PWD/trust-policy.json"
 uv run haykal --state-dir .haykal serve --host 127.0.0.1 --port 8421
 ```
