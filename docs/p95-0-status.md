@@ -53,7 +53,7 @@ test in the owning remediation phase.
 - Local wheel: `haykal_runtime-0.0.1-py3-none-any.whl` with SHA-256
   `b731e706cdc7896a0cf226f64fb94966d01780051b119fec205d6df643ecb25d`.
 - Pre-hardening baseline commit: `f78ca16`.
-- P95.0 implementation commit: pending until this evidence set is committed.
+- P95.0 implementation commit: `c2ef45973a49202800cec59d922033d2b9c0517b`.
 
 ## Evidence required to pass
 
