@@ -50,6 +50,10 @@ test in the owning remediation phase.
 - Secret scan: zero unallowlisted findings.
 - Dependency audit: zero known vulnerabilities in auditable dependencies.
 - Workflow lint: actionlint 1.7.12 passed.
+- A separate local clone at commit
+  `eafd6c2d32f8b95e7e098bff0053d8a04e1cd1df` repeated the secret scan, complete
+  host gate, clean wheel installation, dependency audit, and workflow lint
+  successfully. This is fresh-checkout evidence, but not hosted evidence.
 - Local wheel: `haykal_runtime-0.0.1-py3-none-any.whl` with SHA-256
   `b731e706cdc7896a0cf226f64fb94966d01780051b119fec205d6df643ecb25d`.
 - Pre-hardening baseline commit: `f78ca16`.
