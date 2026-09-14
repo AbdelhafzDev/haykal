@@ -16,7 +16,7 @@ from haykal.contracts import (
     SemanticAction,
     Skill,
 )
-from haykal.contracts.action import ActionTarget, Risk
+from haykal.contracts.action import ActionTarget, ResolvedTarget, Risk
 from haykal.contracts.extraction import ExtractedRecord, ExtractionResult, RecordAnchor
 from haykal.contracts.skill import (
     Branch,
@@ -26,18 +26,18 @@ from haykal.contracts.skill import (
     SumReconcile,
     Transition,
 )
+from haykal.execution.risk import (
+    RiskClassifier,
+    ValidatedApproval,
+    canonical_digest,
+    resolved_target_fingerprint,
+)
 from haykal.runtime import RuntimeSession
 from haykal.skills import SkillRegistry
 from haykal.traces import TraceStore
 from haykal.verification import ExpectationEvaluator
 
-from .approval import (
-    ApprovalError,
-    ApprovalService,
-    ApprovalStale,
-    RiskClassifier,
-    canonical_digest,
-)
+from .approval import ApprovalError, ApprovalService, ApprovalStale
 from .journal import RunJournal
 from .selection import SelectionEvaluator
 from .values import ValueNotFound, get_path, public_input_echo, resolve_value
@@ -180,26 +180,12 @@ class SkillEngine:
                 raise InvalidDecision("recovery action requires an explicit expectation")
             runtime = self._sessions(snapshot.session_id)
             resolution = await runtime.resolve(response.action)
-            target = resolution.get("target")
-            target_context = ""
-            if isinstance(target, dict) and isinstance(target.get("element_id"), str):
-                element = next(
-                    (
-                        item
-                        for item in runtime.current_scene().elements
-                        if item.id == target["element_id"]
-                    ),
-                    None,
-                )
-                if element is not None:
-                    target_context = " ".join(
-                        value
-                        for value in (element.label, element.text, element.resource_id)
-                        if value
-                    )
-            if self._risks.classify(response.action, target_context=target_context) != "navigation":
+            effective_risk = self._effective_risk(resolution)
+            if effective_risk.category != "navigation" or effective_risk.gate != "none":
                 raise InvalidDecision("decision actions must be reversible navigation")
-            recovery_action = response.action.model_copy(update={"expect": response.expect})
+            recovery_action = response.action.model_copy(
+                update={"expect": response.expect, "risk": effective_risk}
+            )
             claim = self._journal.claim_action(
                 snapshot.run_id,
                 recovery_action.action_id,
@@ -324,6 +310,7 @@ class SkillEngine:
             action = self._action(snapshot, state)
             anchors = self._anchors(snapshot)
             if action is not None:
+                validated_approval: ValidatedApproval | None = None
                 try:
                     resolution = await runtime.resolve(action, record_anchors=anchors)
                 except ValueError:
@@ -332,6 +319,10 @@ class SkillEngine:
                         reason="ambiguous_target",
                         allowed_actions=["tap", "press_key", "cancel"],
                     )
+                effective_risk = self._effective_risk(resolution)
+                action = action.model_copy(update={"risk": effective_risk})
+                if effective_risk.gate == "required" and state.gate is None:
+                    return self._fail(snapshot, "approval_policy_missing")
                 if state.gate is not None:
                     challenge = self._make_challenge(snapshot, state, action, resolution)
                     if approval_token is None:
@@ -366,6 +357,12 @@ class SkillEngine:
                         )
                         self._event(snapshot, "run.approval_stale", pending)
                         return snapshot
+                    validated_approval = ValidatedApproval(
+                        gate_id=challenge.gate_id,
+                        action_intent_digest=challenge.action_intent_digest,
+                        target_fingerprint=challenge.target_fingerprint,
+                        effective_risk=action.risk.category,
+                    )
                     approval_token = None
                 claim = self._journal.claim_action(
                     snapshot.run_id,
@@ -384,7 +381,7 @@ class SkillEngine:
                     action,
                     run_id=snapshot.run_id,
                     trace_id=snapshot.trace_id,
-                    approved=state.gate is not None,
+                    approval=validated_approval,
                     record_anchors=anchors,
                 )
                 if action_result.status == "verified":
@@ -595,10 +592,8 @@ class SkillEngine:
         if not isinstance(target, dict) or not isinstance(target.get("element_id"), str):
             raise ValueError("gated action must resolve an element")
         scene = self._sessions(snapshot.session_id).current_scene()
-        element = next((item for item in scene.elements if item.id == target["element_id"]), None)
-        fingerprint = canonical_digest(
-            element.fingerprint.model_dump(mode="json") if element is not None else target
-        )
+        resolved = ResolvedTarget.model_validate(target)
+        fingerprint = resolved_target_fingerprint(scene, resolved)
         return self._approvals.challenge(
             run_id=snapshot.run_id,
             skill_digest=snapshot.skill_digest,
@@ -608,6 +603,14 @@ class SkillEngine:
             evidence_scene_digest=scene.digest,
             ttl_s=self._approval_ttl_s,
         )
+
+    @staticmethod
+    def _effective_risk(resolution: dict[str, object]) -> Risk:
+        assessment = resolution.get("risk")
+        if not isinstance(assessment, dict):
+            raise ValueError("runtime resolution omitted effective risk assessment")
+        effective = assessment.get("effective")
+        return Risk.model_validate(effective)
 
     def _challenge(self, snapshot: RunSnapshot) -> ApprovalChallenge:
         pending = snapshot.pending or {}

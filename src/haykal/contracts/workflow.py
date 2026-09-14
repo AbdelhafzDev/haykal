@@ -7,7 +7,7 @@ from typing import Literal
 
 from pydantic import Field, model_validator
 
-from .action import SemanticAction
+from .action import Risk, SemanticAction
 from .common import ContractModel, NonNegativeInt, SchemaVersion
 from .expectation import Expectation
 from .extraction import ExtractedRecord
@@ -87,6 +87,7 @@ class ApprovalChallenge(ContractModel):
     evidence_scene_digest: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     expires_at: datetime
     nonce: str
+    risk: Risk | None = None
 
 
 class ApprovalGrantRequest(ContractModel):

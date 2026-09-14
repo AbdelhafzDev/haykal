@@ -25,27 +25,20 @@ from haykal.resolver import AmbiguousTarget, TargetResolutionError, TargetResolv
 from haykal.traces import TraceStore
 from haykal.verification import VerificationService
 
+from .risk import RiskAssessment, RiskClassifier, ValidatedApproval, validate_approval
+
 
 class ApprovalRequired(PermissionError):
     """A sensitive or irreversible action has no validated approval yet."""
 
 
-_APPROVAL_CATEGORIES = {
-    "purchase",
-    "transfer",
-    "submission",
-    "deletion",
-    "permission",
-    "credential",
-    "communication",
-    "unknown",
-}
 _IRREVERSIBLE_CATEGORIES = {
     "purchase",
     "transfer",
     "submission",
     "deletion",
     "communication",
+    "unknown",
 }
 ActionStatus = Literal[
     "verified",
@@ -75,11 +68,21 @@ class ActionRunner:
         resolver: TargetResolver,
         verifier: VerificationService,
         traces: TraceStore,
+        risk_classifier: RiskClassifier | None = None,
     ) -> None:
         self._backend = backend
         self._resolver = resolver
         self._verifier = verifier
         self._traces = traces
+        self._risks = risk_classifier or RiskClassifier()
+
+    def assess(
+        self,
+        action: SemanticAction,
+        scene: SemanticScene,
+        target: ResolvedTarget | None,
+    ) -> RiskAssessment:
+        return self._risks.assess(action, scene, target)
 
     async def execute(
         self,
@@ -90,7 +93,7 @@ class ActionRunner:
         trace_id: str | None = None,
         source_scene: SemanticScene | None = None,
         record_anchors: dict[str, RecordAnchor] | None = None,
-        approved: bool = False,
+        approval: ValidatedApproval | None = None,
     ) -> ActionResult:
         run_id = run_id or f"run_{uuid.uuid4().hex}"
         trace_id = trace_id or self._traces.new_trace_id()
@@ -108,9 +111,8 @@ class ActionRunner:
         )
         resolved: ResolvedTarget | None = None
         receipt: DeviceReceipt | None = None
+        effective_action = action
         try:
-            if action.risk.category in _APPROVAL_CATEGORIES and not approved:
-                raise ApprovalRequired(f"{action.risk.category} action requires validated approval")
             if action.target is not None:
                 decision = self._resolver.resolve(
                     action.target,
@@ -127,11 +129,36 @@ class ActionRunner:
                     event_type="target.resolved",
                     payload=resolved.model_dump(mode="json"),
                 )
+            assessment = self.assess(action, pre_scene, resolved)
+            effective_action = action.model_copy(update={"risk": assessment.effective})
+            self._traces.append(
+                trace_id=trace_id,
+                run_id=run_id,
+                event_type="risk.assessed",
+                payload={
+                    "action_id": action.action_id,
+                    **assessment.as_dict(),
+                },
+            )
+            approval_valid = validate_approval(
+                approval,
+                effective_action,
+                pre_scene,
+                resolved,
+                assessment,
+            )
+            if assessment.policy_decision == "approval_required" and not approval_valid:
+                detail = (
+                    "approval binding does not match the effective action and target"
+                    if approval is not None
+                    else f"{assessment.effective.category} action requires validated approval"
+                )
+                raise ApprovalRequired(detail)
             receipt, dispatch_status = await self._dispatch(
-                action,
+                effective_action,
                 pre_scene,
                 resolved_point=resolved.point if resolved is not None else None,
-                approved=approved,
+                approval=approval if approval_valid else None,
             )
             self._traces.append(
                 trace_id=trace_id,
@@ -150,7 +177,7 @@ class ActionRunner:
                     payload={"action_id": action.action_id},
                 )
                 return self._result(
-                    action,
+                    effective_action,
                     started,
                     pre_scene,
                     trace_id,
@@ -159,8 +186,8 @@ class ActionRunner:
                     receipt=receipt,
                 )
             verification = await (
-                self._verifier.verify(action.expect, pre_scene=pre_scene)
-                if action.expect is not None
+                self._verifier.verify(effective_action.expect, pre_scene=pre_scene)
+                if effective_action.expect is not None
                 else self._verifier.settle(pre_scene=pre_scene)
             )
             post_scene = verification.frame.scene
@@ -170,7 +197,7 @@ class ActionRunner:
                 event_type="observation.created",
                 payload={"scene_id": post_scene.scene_id, "revision": post_scene.revision},
             )
-            if action.expect is None:
+            if effective_action.expect is None:
                 changed = semantic_content_digest(pre_scene.elements) != semantic_content_digest(
                     post_scene.elements
                 )
@@ -213,7 +240,7 @@ class ActionRunner:
                     payload={"action_id": action.action_id, "post_scene": post_scene.scene_id},
                 )
             return self._result(
-                action,
+                effective_action,
                 started,
                 pre_scene,
                 trace_id,
@@ -245,7 +272,9 @@ class ActionRunner:
             )
         except Exception as exc:
             failure_status: ActionStatus = (
-                "outcome_unknown" if action.risk.category in _IRREVERSIBLE_CATEGORIES else "failed"
+                "outcome_unknown"
+                if effective_action.risk.category in _IRREVERSIBLE_CATEGORIES
+                else "failed"
             )
             self._record_failure(
                 trace_id,
@@ -255,7 +284,7 @@ class ActionRunner:
                 type(exc).__name__,
             )
             return self._result(
-                action,
+                effective_action,
                 started,
                 pre_scene,
                 trace_id,
@@ -270,13 +299,13 @@ class ActionRunner:
         scene: SemanticScene,
         *,
         resolved_point: tuple[int, int] | None,
-        approved: bool,
+        approval: ValidatedApproval | None,
     ) -> tuple[DeviceReceipt, DispatchStatus]:
         method, params, input_strategy = self._command(action, scene, resolved_point=resolved_point)
         request_digest = _digest(method, params)
         irreversible = action.risk.category in _IRREVERSIBLE_CATEGORIES
         if irreversible:
-            if not approved:
+            if approval is None:
                 raise ApprovalRequired("irreversible dispatch requires approval")
             outcome = await self._backend.dispatch_once(
                 action_id=action.action_id,

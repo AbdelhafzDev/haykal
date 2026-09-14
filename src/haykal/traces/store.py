@@ -74,8 +74,8 @@ class TraceStore:
         event_type: EventType,
         payload: dict[str, object] | None = None,
         artifacts: list[str] | None = None,
-        redaction_policy: str = "default",
-        redaction_applied: bool = True,
+        redaction_policy: str = "raw",
+        redaction_applied: bool = False,
     ) -> TraceEnvelope:
         with closing(self._connect()) as connection:
             connection.execute("BEGIN IMMEDIATE")

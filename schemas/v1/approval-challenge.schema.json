@@ -1,4 +1,41 @@
 {
+  "$defs": {
+    "Risk": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "enum": [
+            "navigation",
+            "purchase",
+            "transfer",
+            "submission",
+            "deletion",
+            "permission",
+            "credential",
+            "communication",
+            "unknown"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "gate": {
+          "default": "policy",
+          "enum": [
+            "required",
+            "policy",
+            "none"
+          ],
+          "title": "Gate",
+          "type": "string"
+        }
+      },
+      "required": [
+        "category"
+      ],
+      "title": "Risk",
+      "type": "object"
+    }
+  },
   "additionalProperties": false,
   "properties": {
     "action_intent_digest": {
@@ -33,6 +70,17 @@
     "nonce": {
       "title": "Nonce",
       "type": "string"
+    },
+    "risk": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Risk"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "run_id": {
       "title": "Run Id",

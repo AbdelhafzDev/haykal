@@ -24,6 +24,7 @@ from haykal.contracts.extraction import ExtractedRecord, RecordAnchor
 from haykal.contracts.selector import Selector
 from haykal.device import DeviceBackend
 from haykal.execution import ActionRunner
+from haykal.execution.risk import ValidatedApproval
 from haykal.extraction import ExtractionEngine, ExtractionPipeline
 from haykal.perception import PerceptionAdapter, semantic_content_digest
 from haykal.resolver import TargetResolver
@@ -322,7 +323,13 @@ class RuntimeSession:
         async with self._lock:
             pre_scene = self._record().scene
             if action.target is None:
-                return {"accepted": True, "target": None, "ranked": []}
+                assessment = self._runner.assess(action, pre_scene, None)
+                return {
+                    "accepted": True,
+                    "target": None,
+                    "ranked": [],
+                    "risk": assessment.as_dict(),
+                }
             source = self._source_scene(action)
             decision = self._resolver.resolve(
                 action.target,
@@ -332,9 +339,11 @@ class RuntimeSession:
                 source_scene=source,
                 record_anchors=record_anchors,
             )
+            assessment = self._runner.assess(action, pre_scene, decision.target)
             return {
                 "accepted": True,
                 "target": decision.target.model_dump(mode="json"),
+                "risk": assessment.as_dict(),
                 "ranked": [
                     {
                         "element_id": item.element.id,
@@ -352,7 +361,7 @@ class RuntimeSession:
         *,
         run_id: str | None = None,
         trace_id: str | None = None,
-        approved: bool = False,
+        approval: ValidatedApproval | None = None,
         record_anchors: dict[str, RecordAnchor] | None = None,
     ) -> ActionResult:
         async with self._lock:
@@ -363,7 +372,7 @@ class RuntimeSession:
                 run_id=run_id,
                 trace_id=trace_id,
                 source_scene=self._source_scene(action),
-                approved=approved,
+                approval=approval,
                 record_anchors=record_anchors,
             )
 

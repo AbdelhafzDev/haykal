@@ -24,14 +24,6 @@ from haykal.transports.mcp import create_mcp_server
 from tests.workflows.test_engine import Backend as SkillBackend
 from tests.workflows.test_engine import _system as skill_system
 
-RISK_LOCK = pytest.mark.xfail(
-    strict=True,
-    reason="P95.1: effective risk is not yet enforced after target resolution",
-)
-PRIVACY_LOCK = pytest.mark.xfail(
-    strict=True,
-    reason="P95.1: image export does not yet fail closed for an unmatched artifact",
-)
 READINESS_LOCK = pytest.mark.xfail(
     strict=True,
     reason="P95.2: diagnostics do not yet include device readiness",
@@ -117,7 +109,6 @@ def _downgraded_coordinate(revision: int) -> dict[str, object]:
     }
 
 
-@RISK_LOCK
 def test_http_coordinate_risk_downgrade_cannot_dispatch(tmp_path: Path) -> None:
     backends: list[PaymentBackend] = []
 
@@ -157,7 +148,6 @@ def test_http_coordinate_risk_downgrade_cannot_dispatch(tmp_path: Path) -> None:
     assert backends[0].dispatches == 0
 
 
-@RISK_LOCK
 @pytest.mark.asyncio
 async def test_mcp_resolved_payment_label_overrides_caller_navigation(tmp_path: Path) -> None:
     backend = PaymentBackend()
@@ -214,7 +204,6 @@ def _downgraded_skill() -> Skill:
     )
 
 
-@RISK_LOCK
 @pytest.mark.asyncio
 async def test_signed_skill_is_reclassified_from_resolved_payment_target(tmp_path: Path) -> None:
     backend = SkillBackend(mode="approval")
@@ -223,7 +212,8 @@ async def test_signed_skill_is_reclassified_from_resolved_payment_target(tmp_pat
         RunRequest(session_id="session-1", skill=signed.metadata.name, version="1.0.0")
     )
 
-    assert result.status == "approval_required"
+    assert result.status == "failed"
+    assert result.pending == {"reason": "approval_policy_missing"}
     assert backend.taps == 0
     assert backend.dispatches == 0
 
@@ -234,7 +224,6 @@ def _png(color: tuple[int, int, int]) -> bytes:
     return stream.getvalue()
 
 
-@PRIVACY_LOCK
 def test_trace_export_rejects_artifact_without_matching_image_region(tmp_path: Path) -> None:
     traces = TraceStore(tmp_path / "trace.sqlite3")
     artifacts = ArtifactStore(tmp_path / "artifacts")
@@ -244,7 +233,7 @@ def test_trace_export_rejects_artifact_without_matching_image_region(tmp_path: P
         trace_id="trace",
         run_id="run",
         event_type="observation.created",
-        artifacts=[uncovered.digest],
+        artifacts=[covered.digest, uncovered.digest],
     )
     policy = RedactionPolicy(
         include_images=True,
@@ -253,6 +242,7 @@ def test_trace_export_rejects_artifact_without_matching_image_region(tmp_path: P
 
     with pytest.raises(ValueError, match="matching redaction region"):
         TraceReportExporter(traces, artifacts).export("trace", tmp_path / "report", policy)
+    assert not (tmp_path / "report").exists()
 
 
 @READINESS_LOCK

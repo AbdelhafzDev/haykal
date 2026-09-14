@@ -28,6 +28,8 @@ def test_trace_events_are_durable_ordered_and_strictly_owned(tmp_path: Path) -> 
     )
 
     assert first.sequence == 1
+    assert first.redaction.policy == "raw"
+    assert first.redaction.applied is False
     assert second.sequence == 2
     assert [item.event_type for item in TraceStore(database).read(trace_id)] == [
         "action.prepared",

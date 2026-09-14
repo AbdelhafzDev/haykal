@@ -2,7 +2,14 @@
 
 from .backup import BackupError, StateBackup
 from .health import DiagnosticCheck, DiagnosticReport, Diagnostics
-from .privacy import ImageRegion, RedactionPolicy, Redactor, RetentionPolicy, RetentionService
+from .privacy import (
+    ImageRedactionError,
+    ImageRegion,
+    RedactionPolicy,
+    Redactor,
+    RetentionPolicy,
+    RetentionService,
+)
 from .reliability import ReliabilityReport, report_digest, run_storage_reliability
 from .supply_chain import build_license_report, build_sbom
 from .trace_report import TraceExport, TraceReportExporter
@@ -12,6 +19,7 @@ __all__ = [
     "DiagnosticCheck",
     "DiagnosticReport",
     "Diagnostics",
+    "ImageRedactionError",
     "ImageRegion",
     "RedactionPolicy",
     "Redactor",

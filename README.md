@@ -34,10 +34,13 @@ the public identity of the system.
 Start with the [MVP plan](docs/plan/README.md). The written plan currently scores
 [95/100](docs/plan/09-readiness-scorecard.md); the remaining five points require
 Milestone 0 evidence and cannot be earned by documentation alone.
-The post-Phase-5 implementation review scores the current stable-MVP readiness at
-**70/100** with a no-go release decision. Follow the phased
-[Path to 95](docs/plan/10-path-to-95.md); this implementation score is separate
-from the written-plan score.
+The post-Phase-5 implementation review started stable-MVP readiness at 70/100.
+After the locally completed P95.1 safety/privacy phase, the honest current score
+is **78/100 official**, or **80/100 conditional** on the still-missing hosted
+fresh-checkout run. The release decision remains no-go. Follow the phased
+[Path to 95](docs/plan/10-path-to-95.md) and the
+[P95.1 evidence record](docs/p95-1-status.md); this implementation score is
+separate from the written-plan score.
 
 Implementation has started. See the [Milestone 0 runbook](docs/m0-runbook.md).
 The Phase 1 contract/device/reference-app implementation is locally accepted; see

@@ -45,7 +45,8 @@ release criterion.
 
 ## Latest local evidence
 
-- Host gate: 483 tests passed with 85.28% coverage; Ruff, strict mypy over 95
+- Host gate after P95.1: 499 tests passed, 3 intentionally locked tests remained,
+  and coverage was 85.66%; Ruff, strict mypy over 96
   source files, 21 schema generation, package build, and Actionlint passed.
 - A newly created Python 3.13 virtual environment installed the built wheel and
   executed the diagnostics command successfully.
@@ -64,13 +65,13 @@ release criterion.
 | Host release and clean-wheel gate | partial, blocking | host tests and isolated installation pass, but the installed wheel has not run the Android E2E lifecycle |
 | Clean API 34/35 reference VMs | configured, not observed | API 37 local VM passed; hosted matrix has not run because this repository has no remote/commit |
 | Static trace usable without DB | passed locally | exporter tests and API 37 live trace export |
-| Redaction and retention | failed, blocking | artifact-specific image regions can leave another exported image completely unredacted; retention lacks reachability |
+| Redaction and retention | privacy defect fixed locally; later evidence remains | P95.1 aborts the whole image export for absent, mismatched, malformed, or out-of-bounds coverage; retention reachability is still outside this phase |
 | Backup and recovery | passed locally | tests plus API 37 live-state backup/restore/diagnostics |
-| Effective risk/approval floor | failed, blocking | primitive callers control risk; skill actions are not reclassified from resolved target context |
+| Effective risk/approval floor | passed locally | P95.1 reclassifies resolved targets for Python, HTTP, MCP, recovery, and skills; bound permits and single-shot dispatch are permanent regressions and passed on API 37 Matjar |
 | Device readiness | failed, blocking | health checks storage only and can return ready without a usable authorized device |
 | Load/chaos harness | partial, blocking | the smoke exercises storage concurrency, but interruption counters do not inject process, database, backend, ADB, lease, or device failures |
 | Eight-hour device soak | not run, blocking | requires 28,800 uninterrupted seconds on the release VM |
-| Critical/high threat findings | failed, blocking | effective-risk and image-export findings must close in P95.1 before release evidence continues |
+| Critical/high threat findings | P95.1 findings closed locally | downgrade and image-export defects are closed by adversarial, property, corpus, and live Matjar evidence; later phase blockers keep the overall release no-go |
 | Comparative benchmark | failed design plus external blocker | results are adapter-reported rather than independently read from Matjar; no pinned runnable Agent Device adapter is supplied |
 | Authorized regional compatibility | blocked externally | no app build/account/OTP/test authorization supplied |
 | Non-core author exercise | blocked externally | requires a human participant outside the core implementation |

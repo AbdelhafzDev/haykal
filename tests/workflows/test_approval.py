@@ -22,7 +22,7 @@ def _action() -> SemanticAction:
         action_id="submit-order",
         kind="tap",
         target=ActionTarget(selector=Selector(semantic_name="place_order")),
-        risk=Risk(category="navigation", gate="none"),
+        risk=Risk(category="purchase", gate="required"),
     )
 
 
@@ -64,6 +64,16 @@ def test_changed_material_or_target_rejects_stale_approval(tmp_path: Path) -> No
         service.consume(grant.token, changed)
 
 
+def test_changed_effective_risk_rejects_stale_approval(tmp_path: Path) -> None:
+    service = ApprovalService(tmp_path / "approval.sqlite3", signing_secret=b"x" * 32)
+    original = _challenge(service)
+    grant = service.grant(original, principal="approver", scopes={"approve"})
+    changed = original.model_copy(update={"risk": Risk(category="transfer", gate="required")})
+
+    with pytest.raises(ApprovalStale, match="binding changed"):
+        service.consume(grant.token, changed)
+
+
 def test_expired_challenge_and_token_are_rejected(tmp_path: Path) -> None:
     service = ApprovalService(tmp_path / "approval.sqlite3", signing_secret=b"x" * 32)
     now = datetime.now(UTC)
@@ -78,8 +88,24 @@ def test_expired_challenge_and_token_are_rejected(tmp_path: Path) -> None:
 
 
 def test_risk_classifier_cannot_be_lowered_by_skill() -> None:
-    assert RiskClassifier().classify(_action()) == "purchase"
-    coordinate = _action().model_copy(
+    downgraded = _action().model_copy(update={"risk": Risk(category="navigation", gate="none")})
+    assert RiskClassifier().classify(downgraded) == "purchase"
+    coordinate = downgraded.model_copy(
         update={"target": ActionTarget(coordinates=(10, 20), scene_revision=1, description="x")}
     )
     assert RiskClassifier().classify(coordinate) == "unknown"
+
+
+def test_navigation_cannot_create_an_approval_challenge(tmp_path: Path) -> None:
+    service = ApprovalService(tmp_path / "approval.sqlite3", signing_secret=b"x" * 32)
+    navigation = _action().model_copy(update={"risk": Risk(category="navigation", gate="none")})
+
+    with pytest.raises(ApprovalError, match="effective gated risk"):
+        service.challenge(
+            run_id="run-1",
+            skill_digest="sha256:" + "a" * 64,
+            action=navigation,
+            target_fingerprint="sha256:" + "b" * 64,
+            material={},
+            evidence_scene_digest="sha256:" + "c" * 64,
+        )

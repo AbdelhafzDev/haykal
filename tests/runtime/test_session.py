@@ -99,6 +99,7 @@ async def test_shared_runtime_observe_resolve_act_verify_trace(tmp_path: Path) -
     assert [event["event_type"] for event in runtime.trace(result.trace_id)] == [
         "action.prepared",
         "target.resolved",
+        "risk.assessed",
         "action.dispatched",
         "observation.created",
         "verification.completed",

@@ -696,8 +696,9 @@ an external model are counted by the caller, not by Haykal.
 - `device.lease_acquired`
 - `observation.created`
 - `extraction.completed`
-- `target.resolved`
 - `action.prepared`
+- `target.resolved`
+- `risk.assessed`
 - `action.dispatched`
 - `verification.completed`
 - `transition.committed`
@@ -730,9 +731,20 @@ retention window receives `event_cursor_expired` and must fetch the durable trac
   "occurred_at": "2026-09-13T10:01:03.480Z",
   "payload": {},
   "artifacts": ["sha256:..."],
-  "redaction": {"policy": "default", "applied": true}
+  "redaction": {"policy": "raw", "applied": false}
 }
 ```
+
+The durable store records the representation it actually contains: raw envelopes
+use `policy: raw` and `applied: false`. Authenticated HTTP/SSE/MCP reads and static
+exports pass each envelope through the selected redactor and return
+`applied: true`; callers must not interpret the stored flag as permission to
+publish the raw row.
+
+`risk.assessed` is emitted after target resolution and before dispatch. Its safe
+payload records the caller/skill declaration, runtime inference, effective risk,
+and policy decision. It never includes input text, approval tokens, or raw gate
+material.
 
 ## Error contract
 

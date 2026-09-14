@@ -11,6 +11,18 @@ from .common import Confidence, ContractModel, NonNegativeInt, SchemaVersion
 from .expectation import Expectation
 from .selector import Selector
 
+RiskCategory = Literal[
+    "navigation",
+    "purchase",
+    "transfer",
+    "submission",
+    "deletion",
+    "permission",
+    "credential",
+    "communication",
+    "unknown",
+]
+
 
 class ActionTarget(ContractModel):
     scene_revision: NonNegativeInt | None = None
@@ -43,17 +55,7 @@ class ResolutionPolicy(ContractModel):
 
 
 class Risk(ContractModel):
-    category: Literal[
-        "navigation",
-        "purchase",
-        "transfer",
-        "submission",
-        "deletion",
-        "permission",
-        "credential",
-        "communication",
-        "unknown",
-    ]
+    category: RiskCategory
     gate: Literal["required", "policy", "none"] = "policy"
 
 

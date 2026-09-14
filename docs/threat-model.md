@@ -15,8 +15,8 @@ screenshots, approval capability, skill signing keys, and execution history.
 | Unauthorized device control | critical | Loopback default, bearer auth, mutation idempotency, exclusive lease; remote bind requires explicit TLS-proxy acknowledgement | resolved for supported deployment |
 | Approval replay/substitution | critical | Separate credential, exact challenge review, HMAC capability stored by hash, nonce/expiry, run/skill/action/target/material binding, atomic consume | resolved and tested |
 | Duplicate irreversible tap | critical | Raw UIAutomator2 single-shot transport, durable dispatch ledger, no transparent recovery, Orders reconciliation | resolved on Matjar; broader device matrix pending |
-| Caller or skill downgrades action risk | critical | Planned P95.1 effective-risk floor after target resolution across HTTP, MCP, Python, recovery, and skills | open release blocker; primitive risk is caller-controlled and ordinary skill classification lacks resolved target context |
-| Trace/screenshot disclosure | high | Images omitted by default; planned P95.1 per-artifact fail-closed region coverage and expanded text corpus | open release blocker; an unmatched artifact can currently export unchanged |
+| Caller or skill downgrades action risk | critical | Runtime-owned monotonic risk floor after target resolution across HTTP, MCP, Python, recovery, and skills; bound internal approval capability; irreversible/unknown single-shot dispatch | resolved in P95.1 by transport/skill regressions, property testing, and API 37 Matjar approval evidence |
+| Trace/screenshot disclosure | high | Images omitted by default; image-enabled exports require wildcard or per-artifact regions, validate decoded bounds, and abort transactionally on absent/malformed coverage; raw/public trace state is explicit | resolved for the exporter in P95.1; deployments still own the correctness and completeness of configured pixel regions |
 | Backup disclosure | high | No embedded credentials, integrity manifest, operational requirement for encrypted destination | accepted limitation; blocks deployments without encrypted backup storage |
 | UI text/prompt injection | high | Screen text is data only; deterministic selector/extraction contracts; recovery decisions restricted to verified reversible navigation | resolved by architecture |
 | Candidate-patch poisoning | high | Patch is redacted, inert, and never promoted automatically | resolved |
@@ -28,3 +28,9 @@ screenshots, approval capability, skill signing keys, and execution history.
 
 Any regression in a critical row blocks release. High residual conditions marked
 as deployment blockers must be checked in the deployment acceptance record.
+
+The P95.1 evidence and residual limitations are recorded in
+[`p95-1-status.md`](p95-1-status.md). This closes the two reviewed implementation
+defects; it does not substitute for the clean API 34/35 matrix, hosted CI,
+external benchmark, regional authorization, or long soak required by later
+phases.

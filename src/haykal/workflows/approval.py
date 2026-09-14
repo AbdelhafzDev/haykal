@@ -4,18 +4,16 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-import json
 import secrets
 import sqlite3
-import unicodedata
 import uuid
 from contextlib import closing
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import ClassVar, Literal, cast
 
 from haykal.contracts import ApprovalChallenge, ApprovalGrant
 from haykal.contracts.action import SemanticAction
+from haykal.execution.risk import canonical_digest
 
 
 class ApprovalError(PermissionError):
@@ -32,88 +30,6 @@ class ApprovalReused(ApprovalError):
 
 class ApprovalStale(ApprovalError):
     pass
-
-
-def _normalize(value: object) -> object:
-    if isinstance(value, str):
-        return " ".join(unicodedata.normalize("NFKC", value).split())
-    if isinstance(value, list):
-        return [_normalize(item) for item in value]
-    if isinstance(value, dict):
-        return {key: _normalize(item) for key, item in value.items()}
-    return value
-
-
-def canonical_digest(value: object, *, normalize_text: bool = False) -> str:
-    effective = _normalize(value) if normalize_text else value
-    encoded = json.dumps(
-        effective,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-        default=str,
-    ).encode()
-    return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
-
-
-RiskCategory = Literal[
-    "navigation",
-    "purchase",
-    "transfer",
-    "submission",
-    "deletion",
-    "permission",
-    "credential",
-    "communication",
-    "unknown",
-]
-
-
-class RiskClassifier:
-    """Independent floor: a skill declaration can raise risk, never lower it."""
-
-    _ORDER: ClassVar[dict[str, int]] = {
-        "navigation": 0,
-        "credential": 1,
-        "permission": 2,
-        "communication": 3,
-        "submission": 4,
-        "purchase": 5,
-        "transfer": 6,
-        "deletion": 7,
-        "unknown": 8,
-    }
-
-    def classify(
-        self,
-        action: SemanticAction,
-        declared: str | None = None,
-        *,
-        target_context: str = "",
-    ) -> RiskCategory:
-        inferred = "navigation"
-        semantic = ""
-        if action.target and action.target.selector:
-            semantic = action.target.selector.semantic_name or ""
-        name = f"{semantic} {target_context}".casefold()
-        if action.target is not None and action.target.coordinates is not None:
-            inferred = "unknown"
-        elif action.kind == "input_text":
-            inferred = (
-                "credential" if any(x in name for x in ("password", "otp", "pin")) else "navigation"
-            )
-        elif any(
-            x in name for x in ("place_order", "buy", "purchase", "pay", "إتمام الطلب", "ادفع")
-        ):
-            inferred = "purchase"
-        elif any(x in name for x in ("transfer", "send_money", "تحويل")):
-            inferred = "transfer"
-        elif any(x in name for x in ("delete", "remove_account", "حذف")):
-            inferred = "deletion"
-        candidates = [inferred, action.risk.category]
-        if declared is not None:
-            candidates.append(declared)
-        return cast(RiskCategory, max(candidates, key=self._ORDER.__getitem__))
 
 
 class ApprovalService:
@@ -158,6 +74,8 @@ class ApprovalService:
         ttl_s: int = 300,
         now: datetime | None = None,
     ) -> ApprovalChallenge:
+        if action.risk.gate != "required":
+            raise ApprovalError("approval challenges require effective gated risk")
         current = now or datetime.now(UTC)
         return ApprovalChallenge(
             gate_id=f"gate_{uuid.uuid4().hex}",
@@ -172,6 +90,7 @@ class ApprovalService:
             evidence_scene_digest=evidence_scene_digest,
             expires_at=current + timedelta(seconds=ttl_s),
             nonce=f"nonce_{secrets.token_urlsafe(18)}",
+            risk=action.risk,
         )
 
     def grant(
@@ -275,5 +194,6 @@ class ApprovalService:
             "action_intent_digest",
             "target_fingerprint",
             "material_digest",
+            "risk",
         )
         return all(getattr(bound, field) == getattr(current, field) for field in fields)

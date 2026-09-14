@@ -1,13 +1,13 @@
 """Durable deterministic skill execution building blocks."""
 
+from haykal.execution.risk import RiskClassifier, canonical_digest
+
 from .approval import (
     ApprovalError,
     ApprovalExpired,
     ApprovalReused,
     ApprovalService,
     ApprovalStale,
-    RiskClassifier,
-    canonical_digest,
 )
 from .engine import InvalidDecision, InvalidSkillInput, SkillEngine
 from .journal import ActionClaim, RunJournal

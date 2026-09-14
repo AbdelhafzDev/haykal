@@ -12,6 +12,7 @@ from pydantic import ValidationError
 from haykal.artifacts import ArtifactStore
 from haykal.contracts import TraceEnvelope
 from haykal.hardening import (
+    ImageRedactionError,
     ImageRegion,
     RedactionPolicy,
     Redactor,
@@ -67,6 +68,44 @@ def test_trace_event_redaction_corrects_the_public_policy_record() -> None:
 
     with pytest.raises(ValidationError, match="redaction region"):
         RedactionPolicy(include_images=True)
+
+
+def test_image_redaction_fails_without_matching_or_in_bounds_region() -> None:
+    image = Image.new("RGB", (10, 10), "white")
+    source = io.BytesIO()
+    image.save(source, format="PNG")
+    data = source.getvalue()
+
+    unmatched = Redactor(
+        RedactionPolicy(
+            include_images=True,
+            image_regions=[ImageRegion(artifact="sha256:other", left=0, top=0, right=5, bottom=5)],
+        )
+    )
+    with pytest.raises(ImageRedactionError, match="no matching"):
+        unmatched.redact_image(data, artifact="sha256:target")
+
+    out_of_bounds = Redactor(
+        RedactionPolicy(
+            include_images=True,
+            image_regions=[ImageRegion(left=0, top=0, right=11, bottom=10)],
+        )
+    )
+    with pytest.raises(ImageRedactionError, match="outside image bounds"):
+        out_of_bounds.redact_image(data, artifact="sha256:target")
+
+
+def test_literal_arabic_identity_is_redacted_under_generic_keys() -> None:
+    name = "عبد الحفيظ محمد"
+    address = "شارع الملك فهد، الرياض"
+    redactor = Redactor(RedactionPolicy(literal_secrets=[name, address]))
+
+    rendered = redactor.redact({"actual": f"التوصيل إلى {name} في {address}", "candidate": name})
+
+    encoded = str(rendered)
+    assert name not in encoded
+    assert address not in encoded
+    assert encoded.count("<redacted>") == 3
 
 
 def test_retention_is_preview_first_and_then_deletes(tmp_path: Path) -> None:

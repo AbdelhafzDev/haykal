@@ -63,9 +63,8 @@ class TraceReportExporter:
                     try:
                         raw = self.artifacts.get(digest)
                         safe = redactor.redact_image(raw, artifact=digest)
-                    except (FileNotFoundError, UnidentifiedImageError, ValueError):
-                        omitted += 1
-                        continue
+                    except (FileNotFoundError, UnidentifiedImageError) as exc:
+                        raise ValueError(f"artifact {digest} cannot be safely exported") from exc
                     safe_digest = hashlib.sha256(safe).hexdigest()
                     asset_directory.mkdir(parents=True, exist_ok=True)
                     filename = f"{safe_digest}.png"

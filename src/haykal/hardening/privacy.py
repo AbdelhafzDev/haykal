@@ -29,6 +29,10 @@ class ImageRegion(BaseModel):
         return self
 
 
+class ImageRedactionError(ValueError):
+    """An image cannot be exported under the configured fail-closed policy."""
+
+
 class RedactionPolicy(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: str = "default"
@@ -95,8 +99,21 @@ class Redactor:
         regions = [
             region for region in self.policy.image_regions if region.artifact in {"*", artifact}
         ]
+        if not regions:
+            raise ImageRedactionError(f"artifact {artifact} has no matching redaction region")
         with Image.open(io.BytesIO(data)) as image:
             output = image.convert("RGB")
+            width, height = output.size
+            if any(
+                region.left >= width
+                or region.top >= height
+                or region.right > width
+                or region.bottom > height
+                for region in regions
+            ):
+                raise ImageRedactionError(
+                    f"artifact {artifact} has a redaction region outside image bounds"
+                )
             draw = ImageDraw.Draw(output)
             for region in regions:
                 draw.rectangle(

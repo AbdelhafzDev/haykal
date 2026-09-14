@@ -16,6 +16,7 @@ EventType = Literal[
     "extraction.completed",
     "target.resolved",
     "action.prepared",
+    "risk.assessed",
     "action.dispatched",
     "verification.completed",
     "transition.committed",

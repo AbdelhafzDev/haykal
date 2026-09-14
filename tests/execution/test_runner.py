@@ -18,7 +18,12 @@ from haykal.contracts.scene import (
 from haykal.contracts.selector import Selector, TextMatch
 from haykal.device import DeviceHealth, DeviceSnapshot
 from haykal.device.single_shot import DispatchOutcome
-from haykal.execution import ActionRunner
+from haykal.execution import ActionRunner, RiskClassifier
+from haykal.execution.risk import (
+    ValidatedApproval,
+    action_intent_digest,
+    resolved_target_fingerprint,
+)
 from haykal.resolver import TargetResolver
 from haykal.traces import TraceStore
 from haykal.verification import SceneFrame, VerificationService
@@ -137,6 +142,24 @@ def _runner(
     )
 
 
+def _permit(action: SemanticAction, scene: SemanticScene) -> ValidatedApproval:
+    resolver = TargetResolver()
+    decision = resolver.resolve(
+        action.target,
+        scene,
+        action_kind=action.kind,
+        policy=action.resolution,
+    )
+    assessment = RiskClassifier().assess(action, scene, decision.target)
+    effective_action = action.model_copy(update={"risk": assessment.effective})
+    return ValidatedApproval(
+        gate_id="gate",
+        action_intent_digest=action_intent_digest(effective_action),
+        target_fingerprint=resolved_target_fingerprint(scene, decision.target),
+        effective_risk=assessment.effective.category,
+    )
+
+
 @pytest.mark.asyncio
 async def test_verified_tap_links_complete_trace(tmp_path: Path) -> None:
     backend = FakeBackend()
@@ -173,6 +196,7 @@ async def test_verified_tap_links_complete_trace(tmp_path: Path) -> None:
     assert [event.event_type for event in traces.read("trace")] == [
         "action.prepared",
         "target.resolved",
+        "risk.assessed",
         "action.dispatched",
         "observation.created",
         "verification.completed",
@@ -227,6 +251,94 @@ async def test_sensitive_action_requires_approval(tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
+async def test_resolved_arabic_payment_label_raises_effective_risk(tmp_path: Path) -> None:
+    backend = FakeBackend()
+    runner, traces = _runner(
+        tmp_path,
+        backend,
+        Frames([SceneFrame(_scene(2), "dev.haykal", b"png")]),
+    )
+    scene = _scene(1, "ادفع")
+    action = SemanticAction(
+        action_id="caller-says-navigation",
+        kind="tap",
+        target=ActionTarget(selector=Selector(label=TextMatch(equals="ادفع"))),
+        risk=Risk(category="navigation", gate="none"),
+    )
+
+    result = await runner.execute(action, scene, run_id="run", trace_id="risk-trace")
+
+    assert result.status == "rejected"
+    assert backend.calls == []
+    risk_event = next(
+        event for event in traces.read("risk-trace") if event.event_type == "risk.assessed"
+    )
+    assert risk_event.payload == {
+        "action_id": "caller-says-navigation",
+        "declared": {"category": "navigation", "gate": "none"},
+        "inferred": "purchase",
+        "effective": {"category": "purchase", "gate": "required"},
+        "policy_decision": "approval_required",
+    }
+
+
+@pytest.mark.asyncio
+async def test_mismatched_approval_capability_cannot_dispatch(tmp_path: Path) -> None:
+    backend = FakeBackend()
+    runner, _ = _runner(
+        tmp_path,
+        backend,
+        Frames([SceneFrame(_scene(2), "dev.haykal", b"png")]),
+    )
+    scene = _scene(1, "ادفع")
+    action = SemanticAction(
+        action_id="purchase",
+        kind="tap",
+        target=ActionTarget(selector=Selector(label=TextMatch(equals="ادفع"))),
+        risk=Risk(category="purchase", gate="required"),
+    )
+    approval = _permit(action, scene)
+    approval = ValidatedApproval(
+        gate_id=approval.gate_id,
+        action_intent_digest=approval.action_intent_digest,
+        target_fingerprint="sha256:" + "0" * 64,
+        effective_risk=approval.effective_risk,
+    )
+
+    result = await runner.execute(action, scene, approval=approval)
+
+    assert result.status == "rejected"
+    assert backend.calls == []
+
+
+@pytest.mark.asyncio
+async def test_approved_coordinates_use_single_shot_dispatch(tmp_path: Path) -> None:
+    backend = FakeBackend()
+    runner, _ = _runner(
+        tmp_path,
+        backend,
+        Frames([SceneFrame(_scene(2, "تم"), "dev.haykal", b"png")]),
+    )
+    scene = _scene(1)
+    action = SemanticAction(
+        action_id="coordinate-action",
+        kind="tap",
+        target=ActionTarget(
+            coordinates=(80, 90),
+            scene_revision=scene.revision,
+            description="caller supplied point",
+        ),
+        risk=Risk(category="navigation", gate="none"),
+    )
+
+    result = await runner.execute(action, scene, approval=_permit(action, scene))
+
+    assert result.status == "verified"
+    assert len(backend.calls) == 1
+    assert backend.calls[0][0] == "dispatch_once"
+
+
+@pytest.mark.asyncio
 async def test_irreversible_unknown_never_enters_verification(tmp_path: Path) -> None:
     backend = FakeBackend(dispatch_status="outcome_unknown")
     frames = Frames([SceneFrame(_scene(2), "dev.haykal", b"png")])
@@ -238,10 +350,12 @@ async def test_irreversible_unknown_never_enters_verification(tmp_path: Path) ->
         risk=Risk(category="submission", gate="required"),
     )
 
+    scene = _scene(1)
+    approval = _permit(action, scene)
     result = await runner.execute(
         action,
-        _scene(1),
-        approved=True,
+        scene,
+        approval=approval,
         run_id="run",
         trace_id="trace",
     )
