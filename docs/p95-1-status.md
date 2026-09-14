@@ -68,7 +68,7 @@ Local artifact identities for the final API 37 run:
 
 - wheel SHA-256: `bdd8376850de029e716c7ba0012f811553d0d4c67070f5957f23b642a3213112`
 - Matjar debug APK SHA-256: `22296d98d427ff5e1903319bea4e181c74848c58cd4ccedad732e34ce332132d`
-- implementation commit: `IMPLEMENTATION_COMMIT`
+- implementation commit: `0ad4813445e5c7cb2fc54be8a0885c199d913483`
 
 Commands used:
 
