@@ -29,6 +29,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,7 +61,29 @@ private fun Context.fault(name: String): Boolean =
     getSharedPreferences("matjar", Context.MODE_PRIVATE).getBoolean("fault.$name", false)
 
 private fun Context.saveOrder() {
-    getSharedPreferences("matjar", Context.MODE_PRIVATE).edit().putBoolean("order.created", true).apply()
+    getSharedPreferences("matjar", Context.MODE_PRIVATE).edit().putBoolean("order.created", true).commit()
+}
+
+private fun Context.machineString(name: String, value: String) {
+    getSharedPreferences("matjar", Context.MODE_PRIVATE).edit()
+        .putString("machine.$name", value).commit()
+}
+
+private fun Context.machineInt(name: String, value: Int) {
+    getSharedPreferences("matjar", Context.MODE_PRIVATE).edit()
+        .putInt("machine.$name", value).commit()
+}
+
+private fun Context.incrementMachine(name: String) {
+    val preferences = getSharedPreferences("matjar", Context.MODE_PRIVATE)
+    preferences.edit().putInt("machine.$name", preferences.getInt("machine.$name", 0) + 1).commit()
+}
+
+private fun Context.appendMachineEvent(name: String) {
+    val preferences = getSharedPreferences("matjar", Context.MODE_PRIVATE)
+    val existing = preferences.getString("machine.event_log", "").orEmpty()
+    val updated = if (existing.isEmpty()) name else "$existing\n$name"
+    preferences.edit().putString("machine.event_log", updated).commit()
 }
 
 @Composable
@@ -71,6 +94,7 @@ private fun MatjarApp(context: Context) {
     var promoVisible by remember { mutableStateOf(context.fault("promo_modal")) }
     var settling by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    LaunchedEffect(Unit) { context.machineString("screen", "home") }
     val rtlPrice = if (context.fault("arabic_indic_digits")) "٥٥٫٢٠ ر.س" else "55.20 SAR"
     val navigate: (String) -> Unit = { target ->
         if (context.fault("slow_settle")) {
@@ -78,10 +102,12 @@ private fun MatjarApp(context: Context) {
             scope.launch {
                 delay(1500)
                 screen = target
+                context.machineString("screen", target)
                 settling = false
             }
         } else {
             screen = target
+            context.machineString("screen", target)
         }
     }
 
@@ -106,7 +132,11 @@ private fun MatjarApp(context: Context) {
             )
             "product" -> ProductScreen(
                 unavailable = context.fault("option_unavailable"),
-                onAdd = { basketCount += 1; navigate("basket") },
+                onAdd = {
+                    basketCount += 1
+                    context.machineInt("basket_count", basketCount)
+                    navigate("basket")
+                },
             )
             "basket" -> BasketScreen(
                 count = basketCount,
@@ -121,6 +151,8 @@ private fun MatjarApp(context: Context) {
                 timeout = context.fault("submit_timeout"),
                 addressBlocked = context.fault("address_out_of_area"),
                 onSubmit = {
+                    context.incrementMachine("submit_count")
+                    context.appendMachineEvent("submit_order")
                     if (context.fault("payment_decline")) {
                         navigate("declined")
                     } else {

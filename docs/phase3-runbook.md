@@ -97,14 +97,18 @@ checks the six-event trace.
 
 ## Comparative harness
 
-Create one run manifest containing the twenty entries in
-`benchmarks/tasks.yaml` plus pinned system configurations shaped like
-`benchmarks/systems.example.yaml`, then run:
+Create a v2 run manifest containing the twenty entries in
+`benchmarks/tasks.yaml`, an independently pinned oracle, and configurations shaped
+like `benchmarks/systems.example.yaml`, then run:
 
 ```bash
 uv run haykal benchmark --manifest benchmark-run.yaml --out report/
+uv run haykal benchmark-rebuild --report report/ --out rebuilt/
 ```
 
-Each command adapter reads one JSON task from stdin and writes one JSON result to
-stdout. Do not use a floating version or merge the step-caller and compiled-skill
-tracks.
+Every executable, adapter, model, prompt, APK, device image, task suite, and
+configuration must have a verified SHA-256 pin. Each command adapter reads one
+JSON task from stdin, but its success and safety fields are claims only. The
+controller resets through the separate oracle, records pre/post state, scores the
+declared checks, seals raw evidence read-only, and derives the report. Never merge
+the step-caller and compiled-skill tracks.

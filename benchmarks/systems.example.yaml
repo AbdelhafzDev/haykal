@@ -1,9 +1,37 @@
+# Shape only. Generate every sha256 value from the exact file before a run.
+schema_version: "2.0"
+runs: 30
+random_seed: 95
+task_suite_sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+reference_apk: {path: /absolute/path/matjar.apk, sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000000"}
+device_image: {path: /absolute/path/device-image.txt, sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000000"}
+oracle:
+  command: [/absolute/path/python, /absolute/path/matjar-oracle]
+  executable: {path: /absolute/path/python, sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000000"}
+  adapter: {path: /absolute/path/matjar-oracle, sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000000"}
+  configuration_sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+  options: {serial: emulator-5554, adb_path: /opt/android-sdk/platform-tools/adb}
+tasks: [] # Embed tasks.yaml entries and recompute task_suite_sha256.
 systems:
   - name: haykal
     track: step-caller
-    version: "sha256:replace-with-built-wheel-digest"
-    command: ["/absolute/path/to/haykal-benchmark-adapter"]
+    version: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    command: [/absolute/path/python, /absolute/path/haykal-adapter]
+    executable: {path: /absolute/path/python, sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000000"}
+    adapter: {path: /absolute/path/haykal-adapter, sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000000"}
+    model: {path: /absolute/path/model, sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000000"}
+    prompt: {path: /absolute/path/prompt.txt, sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000000"}
+    configuration_sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    options: {}
+    secret_env: [MODEL_API_KEY]
   - name: agent-device
     track: step-caller
-    version: "git:replace-with-exact-commit"
-    command: ["/absolute/path/to/agent-device-benchmark-adapter"]
+    version: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    command: [/absolute/path/python, /absolute/path/agent-device-adapter]
+    executable: {path: /absolute/path/python, sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000000"}
+    adapter: {path: /absolute/path/agent-device-adapter, sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000000"}
+    model: {path: /absolute/path/model, sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000000"}
+    prompt: {path: /absolute/path/prompt.txt, sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000000"}
+    configuration_sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    options: {}
+    secret_env: [MODEL_API_KEY]

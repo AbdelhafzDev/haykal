@@ -47,10 +47,10 @@ release criterion.
 
 ## Latest local evidence
 
-- Host gate after P95.2: 508 tests passed, 2 intentionally locked P95.3 tests
-  remained, and coverage was 84.62%; Ruff, strict mypy over 97 source files, 21
-  schema generation, package build, clean wheel installation, secret scan,
-  dependency audit, and Actionlint passed.
+- Host gate after P95.3: 520 tests passed with 84.56% coverage; Ruff, strict mypy
+  over 100 source files, 21 schemas, package build, clean wheel installation,
+  secret scan, dependency audit, and Actionlint passed. All seven P95 regressions
+  are permanent passing tests with no remaining xfail locks.
 - A clean API 37 device run passed all 12 process/storage/device fault rows and
   the connected/absent readiness transition. Both prior Matjar lifecycle
   scenarios, static trace export, backup, and restore also passed on API 37.
@@ -74,7 +74,7 @@ release criterion.
 | Fault injection and bounded growth | passed for P95.2 locally | 12-row host/device matrix passed and the 30-minute real-fault soak stayed within declared resource/growth limits |
 | Eight-hour device soak | not run, blocking | requires 28,800 uninterrupted seconds on the release VM |
 | Critical/high threat findings | P95.1 findings closed locally | downgrade and image-export defects are closed by adversarial, property, corpus, and live Matjar evidence; later phase blockers keep the overall release no-go |
-| Comparative benchmark | failed design plus external blocker | results are adapter-reported rather than independently read from Matjar; no pinned runnable Agent Device adapter is supplied |
+| Comparative benchmark | controller passed locally; external comparison blocked | P95.3 scores independent pre/post oracle state, enforces full SHA-256 pins, seals raw evidence, and defeats a lying local adapter over 30 runs; no real pinned Agent Device run is claimed until P95.5 |
 | Authorized regional compatibility | blocked externally | no app build/account/OTP/test authorization supplied |
 | Non-core author exercise | blocked externally | requires a human participant outside the core implementation |
 

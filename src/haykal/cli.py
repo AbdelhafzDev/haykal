@@ -17,7 +17,7 @@ import yaml
 
 from haykal.artifacts import ArtifactStore
 from haykal.authoring import lint_skill, replay_skill
-from haykal.benchmarks import load_manifest, run_benchmark
+from haykal.benchmarks import load_manifest, rebuild_summary, run_benchmark
 from haykal.contracts import ExtractionRequest, Selector, SemanticScene, Skill
 from haykal.contracts.action import ResolutionPolicy
 from haykal.extraction import ExtractionEngine
@@ -298,6 +298,12 @@ def _benchmark(args: argparse.Namespace) -> int:
     return 0
 
 
+def _benchmark_rebuild(args: argparse.Namespace) -> int:
+    digest = rebuild_summary(args.report, args.out)
+    _write({"report": str(Path(args.out).resolve()), "derived_manifest_sha256": digest})
+    return 0
+
+
 def _diagnostics(args: argparse.Namespace) -> int:
     if args.storage_only and args.device:
         raise ValueError("--storage-only and --device are mutually exclusive")
@@ -517,6 +523,13 @@ def _parser() -> argparse.ArgumentParser:
     benchmark.add_argument("--manifest", required=True)
     benchmark.add_argument("--out", required=True)
     benchmark.set_defaults(handler=_benchmark)
+
+    benchmark_rebuild = commands.add_parser(
+        "benchmark-rebuild", help="verify raw oracle evidence and rebuild benchmark summaries"
+    )
+    benchmark_rebuild.add_argument("--report", required=True)
+    benchmark_rebuild.add_argument("--out", required=True)
+    benchmark_rebuild.set_defaults(handler=_benchmark_rebuild)
 
     diagnostics = commands.add_parser("diagnostics", help="inspect runtime health without secrets")
     diagnostics.add_argument("--device")

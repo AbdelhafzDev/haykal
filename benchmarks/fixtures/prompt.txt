@@ -1,0 +1,1 @@
+Complete the supplied neutral benchmark task and report structured output.

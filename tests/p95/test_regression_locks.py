@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import io
 import sqlite3
-import sys
 from contextlib import closing
 from pathlib import Path
 
@@ -21,17 +20,9 @@ from haykal.runtime import RuntimeSession
 from haykal.traces import TraceStore
 from haykal.transports.http import IdempotencyStore, SessionRegistry, create_app
 from haykal.transports.mcp import create_mcp_server
+from tests.benchmarks.test_harness import SequenceOracle, _manifest
 from tests.workflows.test_engine import Backend as SkillBackend
 from tests.workflows.test_engine import _system as skill_system
-
-BENCHMARK_LOCK = pytest.mark.xfail(
-    strict=True,
-    reason="P95.3: benchmark success is not yet computed by an independent oracle",
-)
-PIN_LOCK = pytest.mark.xfail(
-    strict=True,
-    reason="P95.3: benchmark version pins are not yet cryptographically validated",
-)
 
 
 def _hierarchy(label: str, resource: str) -> str:
@@ -254,74 +245,20 @@ def test_storage_health_is_not_device_readiness(tmp_path: Path) -> None:
     assert report.status != "ready"
 
 
-@BENCHMARK_LOCK
 @pytest.mark.asyncio
 async def test_adapter_success_cannot_override_independent_oracle(tmp_path: Path) -> None:
-    command = [
-        sys.executable,
-        "-c",
-        "import json,sys; json.load(sys.stdin); "
-        "print(json.dumps({'success': True, 'unsafe_actions': 0}))",
-    ]
-    manifest = BenchmarkManifest.model_validate(
-        {
-            "runs": 1,
-            "tasks": [
-                {
-                    "id": 1,
-                    "app": "matjar",
-                    "task": "open offers",
-                    "stresses": ["adversarial_adapter"],
-                    "success_check": {"state": "offers", "equals": True},
-                }
-            ],
-            "systems": [
-                {
-                    "name": name,
-                    "track": "step-caller",
-                    "version": f"sha256:{index:064x}",
-                    "command": command,
-                }
-                for index, name in enumerate(("haykal", "agent-device"), start=1)
-            ],
-        }
+    manifest = BenchmarkManifest.model_validate(_manifest(tmp_path))
+
+    results = await run_benchmark(
+        manifest,
+        tmp_path / "report",
+        oracle=SequenceOracle({"offers": False}),
     )
-    oracle_state = {"offers": False}
 
-    results = await run_benchmark(manifest, tmp_path / "report")
-    expected = oracle_state["offers"] is True
-
-    assert all(result.success is expected for result in results)
+    assert all(result.adapter_claimed_success is True for result in results)
+    assert all(result.success is False for result in results)
 
 
-@PIN_LOCK
-def test_benchmark_rejects_non_cryptographic_version_pin() -> None:
-    with pytest.raises(ValueError, match="cryptographic"):
-        BenchmarkManifest.model_validate(
-            {
-                "runs": 1,
-                "tasks": [
-                    {
-                        "id": 1,
-                        "app": "matjar",
-                        "task": "open offers",
-                        "stresses": ["pinning"],
-                        "success_check": {"state": "offers", "equals": True},
-                    }
-                ],
-                "systems": [
-                    {
-                        "name": "haykal",
-                        "track": "step-caller",
-                        "version": "not-a-real-pin",
-                        "command": ["haykal-adapter"],
-                    },
-                    {
-                        "name": "agent-device",
-                        "track": "step-caller",
-                        "version": "also-not-a-pin",
-                        "command": ["agent-device-adapter"],
-                    },
-                ],
-            }
-        )
+def test_benchmark_rejects_non_cryptographic_version_pin(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="string_pattern_mismatch"):
+        BenchmarkManifest.model_validate(_manifest(tmp_path, version="not-a-real-pin"))

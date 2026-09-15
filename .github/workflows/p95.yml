@@ -28,11 +28,12 @@ jobs:
       - run: ./scripts/phase5-check.sh
       - name: Audit the locked runtime environment
         run: uv run pip-audit --progress-spinner off
-      - name: Verify reviewed defects remain explicit regression locks
+      - name: Verify reviewed defects remain permanent regressions
         run: |
           output="$(uv run pytest -q tests/p95)"
           printf '%s\n' "$output"
-          grep -q '2 xfailed' <<<"$output"
+          grep -q '7 passed' <<<"$output"
+          ! grep -q 'xfailed' <<<"$output"
 
   workflow-lint:
     runs-on: ubuntu-24.04

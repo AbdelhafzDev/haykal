@@ -43,6 +43,7 @@ haykal-m2 = "haykal.m2.cli:main"
 haykal-m3 = "haykal.m3.cli:main"
 haykal-m4 = "haykal.m4.skill_smoke:main"
 haykal-schema = "haykal.contracts.schema:main"
+haykal-matjar-oracle = "haykal.benchmarks.matjar_oracle:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/haykal"]
