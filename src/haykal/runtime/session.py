@@ -321,6 +321,7 @@ class RuntimeSession:
         record_anchors: dict[str, RecordAnchor] | None = None,
     ) -> dict[str, object]:
         async with self._lock:
+            await self._relocate_record_anchor(action, record_anchors)
             pre_scene = self._record().scene
             if action.target is None:
                 assessment = self._runner.assess(action, pre_scene, None)
@@ -365,6 +366,7 @@ class RuntimeSession:
         record_anchors: dict[str, RecordAnchor] | None = None,
     ) -> ActionResult:
         async with self._lock:
+            await self._relocate_record_anchor(action, record_anchors)
             pre_scene = self._record().scene
             return await self._runner.execute(
                 action,
@@ -389,6 +391,68 @@ class RuntimeSession:
 
     def current_scene(self) -> SemanticScene:
         return self._record().scene
+
+    async def _relocate_record_anchor(
+        self,
+        action: SemanticAction,
+        record_anchors: dict[str, RecordAnchor] | None,
+    ) -> None:
+        target = action.target
+        if target is None or target.record_anchor is None:
+            return
+        anchor = (record_anchors or {}).get(target.record_anchor)
+        if anchor is None or anchor.scroll_checkpoint is None:
+            return
+        source_id = self._revision_index.get(anchor.scene_revision)
+        source = self._records.get(source_id) if source_id is not None else None
+        previous = (
+            next((item for item in source.scene.elements if item.id == anchor.element_id), None)
+            if source is not None
+            else None
+        )
+        if previous is None or previous.resource_id is None:
+            return
+
+        def visible() -> bool:
+            return any(
+                item.resource_id == previous.resource_id and item.state.visible
+                for item in self._record().scene.elements
+            )
+
+        if visible():
+            return
+        for _ in range(8):
+            scene = self._record().scene
+            container = next(
+                (
+                    item
+                    for item in scene.elements
+                    if item.id == anchor.scroll_checkpoint.container and "scroll" in item.actions
+                ),
+                None,
+            )
+            if container is None:
+                container = next(
+                    (item for item in scene.elements if "scroll" in item.actions),
+                    None,
+                )
+            if container is None:
+                return
+            before = semantic_content_digest(scene.elements)
+            x = (container.bounds.left + container.bounds.right) // 2
+            height = container.bounds.bottom - container.bounds.top
+            await self._backend.swipe(
+                x,
+                container.bounds.top + round(height * 0.2),
+                x,
+                container.bounds.top + round(height * 0.8),
+                300,
+            )
+            await self._capture_settled(stable_samples=2, interval_ms=100)
+            if visible():
+                return
+            if semantic_content_digest(self._record().scene.elements) == before:
+                return
 
     def _source_scene(
         self,

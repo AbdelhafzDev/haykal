@@ -56,7 +56,7 @@ class PagedBackend:
 
     async def swipe(self, x1: int, y1: int, x2: int, y2: int, duration_ms: int) -> None:
         self.swipes += 1
-        self.page = min(2, self.page + 1)
+        self.page = max(0, self.page - 1) if y2 > y1 else min(2, self.page + 1)
 
     async def type_text(self, text: str, *, replace: bool) -> None: ...
 
@@ -127,3 +127,6 @@ async def test_runtime_scrolls_settles_and_deduplicates_records(tmp_path: Path) 
     source = runtime._source_scene(action, {"chosen": first_anchor})
     assert source is not None
     assert source.revision == first_anchor.scene_revision
+    resolution = await runtime.resolve(action, record_anchors={"chosen": first_anchor})
+    assert resolution["accepted"] is True
+    assert backend.page == 0
