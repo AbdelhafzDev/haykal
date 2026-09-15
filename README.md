@@ -35,9 +35,9 @@ Start with the [MVP plan](docs/plan/README.md). The written plan currently score
 [95/100](docs/plan/09-readiness-scorecard.md); the remaining five points require
 Milestone 0 evidence and cannot be earned by documentation alone.
 The post-Phase-5 implementation review started stable-MVP readiness at 70/100.
-After the locally completed P95.3 independent-benchmark phase, the honest current
-score is **86/100 official**, or **88/100 conditional** on the still-missing
-hosted fresh-checkout run. The release decision remains no-go. Follow the phased
+After the locally completed P95.4 shipped-wheel matrix, the honest current score
+is **89/100 official**, or **91/100 conditional** on the still-missing hosted
+fresh-checkout run. The release decision remains no-go. Follow the phased
 [Path to 95](docs/plan/10-path-to-95.md), the
 [P95.1 safety/privacy record](docs/p95-1-status.md), the
 [P95.2 reliability/readiness record](docs/p95-2-status.md), and the
