@@ -330,7 +330,7 @@ class RuntimeSession:
                     "ranked": [],
                     "risk": assessment.as_dict(),
                 }
-            source = self._source_scene(action)
+            source = self._source_scene(action, record_anchors)
             decision = self._resolver.resolve(
                 action.target,
                 pre_scene,
@@ -371,7 +371,7 @@ class RuntimeSession:
                 pre_scene,
                 run_id=run_id,
                 trace_id=trace_id,
-                source_scene=self._source_scene(action),
+                source_scene=self._source_scene(action, record_anchors),
                 approval=approval,
                 record_anchors=record_anchors,
             )
@@ -390,8 +390,19 @@ class RuntimeSession:
     def current_scene(self) -> SemanticScene:
         return self._record().scene
 
-    def _source_scene(self, action: SemanticAction) -> SemanticScene | None:
+    def _source_scene(
+        self,
+        action: SemanticAction,
+        record_anchors: dict[str, RecordAnchor] | None = None,
+    ) -> SemanticScene | None:
         revision = action.target.scene_revision if action.target is not None else None
+        if (
+            revision is None
+            and action.target is not None
+            and action.target.record_anchor is not None
+        ):
+            anchor = (record_anchors or {}).get(action.target.record_anchor)
+            revision = anchor.scene_revision if anchor is not None else None
         if revision is None:
             return None
         scene_id = self._revision_index.get(revision)

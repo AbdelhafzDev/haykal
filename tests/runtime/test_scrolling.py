@@ -6,6 +6,7 @@ import pytest
 
 from haykal.artifacts import ArtifactStore
 from haykal.contracts import ExtractionRequest
+from haykal.contracts.action import ActionTarget, Risk, SemanticAction
 from haykal.contracts.selector import ResourceMatch, Selector
 from haykal.device import DeviceHealth, DeviceSnapshot
 from haykal.device.single_shot import DispatchOutcome
@@ -114,3 +115,15 @@ async def test_runtime_scrolls_settles_and_deduplicates_records(tmp_path: Path) 
     ]
     assert result.stop_reason == "max_records"
     assert backend.swipes == 2
+
+    first_anchor = result.records[0].anchor
+    assert first_anchor is not None
+    action = SemanticAction(
+        action_id="selected-record",
+        kind="tap",
+        target=ActionTarget(record_anchor="chosen"),
+        risk=Risk(category="navigation", gate="none"),
+    )
+    source = runtime._source_scene(action, {"chosen": first_anchor})
+    assert source is not None
+    assert source.revision == first_anchor.scene_revision
