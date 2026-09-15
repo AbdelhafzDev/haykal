@@ -35,7 +35,8 @@ P95_API_LEVEL=34 \
 
 Repeat from a separate clean snapshot with `P95_API_LEVEL=35`. The script:
 
-- verifies every bundle digest before installation;
+- verifies every bundle digest, then uses `uv pip install` only as the isolated
+  wheel installer;
 - installs the previous wheel, creates durable state, then upgrades to the
   promoted wheel;
 - clears `PYTHONPATH`, disables user site packages, changes to a temporary
@@ -46,7 +47,8 @@ Repeat from a separate clean snapshot with `P95_API_LEVEL=35`. The script:
 - exports a static trace, previews retention, backs up and restores state; and
 - proves connected, absent, and recovered device-readiness states.
 
-No acceptance command uses `uv run`. Installation logs, package inventory,
+No acceptance command uses `uv run`, and no project environment is synchronized.
+Installation logs, package inventory,
 device properties, app packages, logcat, reports, and hashes are retained.
 
 ## Verify the matrix

@@ -7,6 +7,11 @@ evidence="${2:?Pass a new evidence directory}"
 serial="${ANDROID_SERIAL:-emulator-5554}"
 adb="$ANDROID_SDK_ROOT/platform-tools/adb"
 expected_api="${P95_API_LEVEL:-}"
+uv_bin="${HAYKAL_UV_BIN:-$(command -v uv)}"
+if [[ -z "$uv_bin" ]]; then
+  echo "uv is required as the wheel installer" >&2
+  exit 2
+fi
 
 bundle="$(cd "$bundle" && pwd)"
 if [[ -e "$evidence" ]]; then
@@ -25,7 +30,7 @@ previous_wheel="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])
 cd "$temporary"
 python3 -m venv wheel-env
 venv="$temporary/wheel-env"
-"$venv/bin/python" -m pip install --disable-pip-version-check "$bundle/$previous_wheel" \
+"$uv_bin" pip install --python "$venv/bin/python" "$bundle/$previous_wheel" \
   >"$evidence/logs/install-previous.txt" 2>&1
 "$venv/bin/python" -m pip show haykal-runtime >"$evidence/reports/package-previous.txt"
 PYTHONPATH= PYTHONNOUSERSITE=1 "$venv/bin/haykal" --state-dir "$temporary/upgrade-state" \
@@ -33,8 +38,9 @@ PYTHONPATH= PYTHONNOUSERSITE=1 "$venv/bin/haykal" --state-dir "$temporary/upgrad
   --output "$evidence/reports/previous-state-run.json" \
   --output-state "$temporary/upgrade-state" >"$evidence/logs/previous-state-run.txt"
 
-"$venv/bin/python" -m pip install --disable-pip-version-check --upgrade --force-reinstall \
-  "$bundle/$current_wheel" >"$evidence/logs/install-current.txt" 2>&1
+"$uv_bin" pip install --python "$venv/bin/python" --upgrade \
+  --reinstall-package haykal-runtime "$bundle/$current_wheel" \
+  >"$evidence/logs/install-current.txt" 2>&1
 "$venv/bin/python" -m pip check >"$evidence/reports/pip-check.txt"
 "$venv/bin/python" -m pip freeze --all >"$evidence/reports/packages.txt"
 "$venv/bin/python" -m pip show haykal-runtime >"$evidence/reports/package-current.txt"
