@@ -49,6 +49,7 @@ clean worktree.
 
 Matjar's stale-approval case is device-backed: the runtime pauses at the purchase
 gate, grants a one-time token, changes the checkout price through the reference
-app's fault channel, restarts the activity at its persisted checkout screen, and
-submits the now-stale token. The gate must pause again with
+app's fault channel, and waits for the changed total on the same checkout screen
+before submitting the
+now-stale token. The gate must pause again with
 `reason=approval_stale`; no purchase dispatch may occur.

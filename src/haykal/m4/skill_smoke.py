@@ -103,42 +103,29 @@ def _change_checkout_price(serial: str) -> None:
     adb = os.environ.get("HAYKAL_ADB_PATH") or shutil.which("adb")
     if adb is None:
         raise RuntimeError("adb is required for --stale-gate")
-    commands = (
-        [
-            adb,
-            "-s",
-            serial,
-            "shell",
-            "am",
-            "broadcast",
-            "-a",
-            "dev.haykal.refapp.SET_FAULT",
-            "-p",
-            "dev.haykal.refapps.matjar",
-            "--es",
-            "name",
-            "price_change",
-            "--ez",
-            "enabled",
-            "true",
-        ],
-        [adb, "-s", serial, "shell", "am", "force-stop", "dev.haykal.refapps.matjar"],
-        [
-            adb,
-            "-s",
-            serial,
-            "shell",
-            "am",
-            "start",
-            "-W",
-            "-n",
-            "dev.haykal.refapps.matjar/.MainActivity",
-        ],
-    )
-    for command in commands:
-        subprocess.run(command, check=True, capture_output=True, text=True, timeout=20)
+    command = [
+        adb,
+        "-s",
+        serial,
+        "shell",
+        "am",
+        "broadcast",
+        "-a",
+        "dev.haykal.refapp.SET_FAULT",
+        "-p",
+        "dev.haykal.refapps.matjar",
+        "--es",
+        "name",
+        "price_change",
+        "--ez",
+        "enabled",
+        "true",
+    ]
+    subprocess.run(command, check=True, capture_output=True, text=True, timeout=20)
     device = connect(serial)
-    if not device(resourceId="dev.haykal.refapps.matjar:id/total").wait(timeout=10):
+    if not device(
+        resourceId="dev.haykal.refapps.matjar:id/total", text="58.00 SAR"
+    ).wait(timeout=10):
         raise RuntimeError("changed Matjar checkout did not become observable")
 
 

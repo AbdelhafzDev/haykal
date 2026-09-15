@@ -93,8 +93,15 @@ private fun MatjarApp(context: Context) {
     var basketCount by remember { mutableStateOf(0) }
     var promoVisible by remember { mutableStateOf(context.fault("promo_modal")) }
     var settling by remember { mutableStateOf(false) }
+    var priceChanged by remember { mutableStateOf(context.fault("price_change")) }
     val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) { context.machineString("screen", "home") }
+    LaunchedEffect(screen) {
+        while (screen == "checkout") {
+            priceChanged = context.fault("price_change")
+            delay(100)
+        }
+    }
     val rtlPrice = if (context.fault("arabic_indic_digits")) "٥٥٫٢٠ ر.س" else "55.20 SAR"
     val navigate: (String) -> Unit = { target ->
         if (context.fault("slow_settle")) {
@@ -147,7 +154,7 @@ private fun MatjarApp(context: Context) {
             )
             "otp" -> Text("رمز التحقق مطلوب • OTP required")
             "checkout" -> CheckoutScreen(
-                total = if (context.fault("price_change")) "58.00 SAR" else rtlPrice,
+                total = if (priceChanged) "58.00 SAR" else rtlPrice,
                 timeout = context.fault("submit_timeout"),
                 addressBlocked = context.fault("address_out_of_area"),
                 onSubmit = {

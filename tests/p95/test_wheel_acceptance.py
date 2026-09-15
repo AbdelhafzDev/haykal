@@ -70,7 +70,5 @@ def test_stale_gate_changes_material_and_restarts_reference_app(
     )
     _change_checkout_price("emulator-5554")
 
-    assert len(commands) == 3
+    assert len(commands) == 1
     assert "price_change" in commands[0]
-    assert commands[1][-2:] == ["force-stop", "dev.haykal.refapps.matjar"]
-    assert commands[2][-1] == "dev.haykal.refapps.matjar/.MainActivity"
