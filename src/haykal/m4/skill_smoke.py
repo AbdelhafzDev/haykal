@@ -123,9 +123,7 @@ def _change_checkout_price(serial: str) -> None:
     ]
     subprocess.run(command, check=True, capture_output=True, text=True, timeout=20)
     device = connect(serial)
-    if not device(
-        resourceId="dev.haykal.refapps.matjar:id/total", text="58.00 SAR"
-    ).wait(timeout=10):
+    if not device(resourceId="total", text="58.00 SAR").wait(timeout=10):
         raise RuntimeError("changed Matjar checkout did not become observable")
 
 
