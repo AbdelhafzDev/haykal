@@ -164,6 +164,19 @@ class TargetResolver:
         previous = SceneIndex(source_scene).by_id.get(element_id)
         if previous is None:
             raise StaleTarget(f"element {element_id!r} is absent from source scene")
+        exact_resource = [
+            element
+            for element in scene.elements
+            if previous.resource_id is not None
+            and element.resource_id == previous.resource_id
+            and self._supports(element, action_kind)
+        ]
+        if len(exact_resource) == 1:
+            matched = exact_resource[0]
+            return ResolutionDecision(
+                self._resolved(matched, 0.99, scene, stale_rebound=True),
+                (RankedTarget(matched, 0.99, ("unique_resource_id",)),),
+            )
         ranked = [
             RankedTarget(element, identity_score(previous, element), ("semantic_fingerprint",))
             for element in scene.elements

@@ -144,3 +144,26 @@ def test_stale_stable_id_rebinds_but_incompatible_element_fails() -> None:
             action_kind="tap",
             policy=ResolutionPolicy(),
         )
+
+
+def test_stale_anchor_prefers_one_exact_resource_across_large_scroll_shift() -> None:
+    source = _scene(1, [_element("old", top=100, resource_id="result_9")])
+    current = _scene(
+        2,
+        [
+            _element("new", top=800, resource_id="result_9"),
+            _element("other", top=200, resource_id="result_10"),
+        ],
+    )
+
+    decision = TargetResolver().resolve(
+        ActionTarget(element_id="old", scene_revision=1),
+        current,
+        action_kind="tap",
+        policy=ResolutionPolicy(),
+        source_scene=source,
+    )
+
+    assert decision.target.element_id == "new"
+    assert decision.target.stale_rebound is True
+    assert decision.ranked[0].reasons == ("unique_resource_id",)
