@@ -41,7 +41,10 @@ hosted fresh-checkout run. The release decision remains no-go. Follow the phased
 [Path to 95](docs/plan/10-path-to-95.md), the
 [P95.1 safety/privacy record](docs/p95-1-status.md), the
 [P95.2 reliability/readiness record](docs/p95-2-status.md), and the
-[P95.3 benchmark record](docs/p95-3-status.md). This implementation score is
+[P95.3 benchmark record](docs/p95-3-status.md). P95.4 shipped-wheel acceptance is
+implemented but does not earn its forecast score until the clean API 34/35
+matrix passes; see the [P95.4 status](docs/p95-4-status.md) and
+[runbook](docs/p95-4-runbook.md). This implementation score is
 separate from the written-plan score.
 
 Implementation has started. See the [Milestone 0 runbook](docs/m0-runbook.md).

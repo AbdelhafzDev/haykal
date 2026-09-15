@@ -5,6 +5,9 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
+import shutil
+import subprocess
 import uuid
 from collections.abc import Sequence
 from pathlib import Path
@@ -25,6 +28,7 @@ async def run_smoke(
     state_directory: Path,
     inputs: dict[str, object],
     approve_gate: bool = False,
+    stale_gate: bool = False,
 ) -> dict[str, object]:
     run_root = state_directory / f"run-{uuid.uuid4().hex}"
     run_root.mkdir(parents=True, exist_ok=False)
@@ -72,6 +76,8 @@ async def run_smoke(
                 principal="haykal-reference-approver",
                 scopes={"approve"},
             )
+            if stale_gate:
+                _change_checkout_price(serial)
             result = await engine.submit_approval(result.run_id, token)
         events = traces.read(result.trace_id)
         return {
@@ -90,6 +96,48 @@ async def run_smoke(
         await runtime.close()
 
 
+def _change_checkout_price(serial: str) -> None:
+    """Change approval material on the reference app before token submission."""
+
+    adb = os.environ.get("HAYKAL_ADB_PATH") or shutil.which("adb")
+    if adb is None:
+        raise RuntimeError("adb is required for --stale-gate")
+    commands = (
+        [
+            adb,
+            "-s",
+            serial,
+            "shell",
+            "am",
+            "broadcast",
+            "-a",
+            "dev.haykal.refapp.SET_FAULT",
+            "-p",
+            "dev.haykal.refapps.matjar",
+            "--es",
+            "name",
+            "price_change",
+            "--ez",
+            "enabled",
+            "true",
+        ],
+        [adb, "-s", serial, "shell", "am", "force-stop", "dev.haykal.refapps.matjar"],
+        [
+            adb,
+            "-s",
+            serial,
+            "shell",
+            "am",
+            "start",
+            "-W",
+            "-n",
+            "dev.haykal.refapps.matjar/.MainActivity",
+        ],
+    )
+    for command in commands:
+        subprocess.run(command, check=True, capture_output=True, text=True, timeout=20)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="haykal-m4")
     parser.add_argument("--serial", required=True)
@@ -97,6 +145,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--state-dir", type=Path, required=True)
     parser.add_argument("--inputs", default="{}")
     parser.add_argument("--approve-gate", action="store_true")
+    parser.add_argument(
+        "--stale-gate",
+        action="store_true",
+        help="change Matjar checkout material after granting approval",
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     inputs = json.loads(args.inputs)
@@ -109,6 +162,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             state_directory=args.state_dir,
             inputs=inputs,
             approve_gate=args.approve_gate,
+            stale_gate=args.stale_gate,
         )
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
