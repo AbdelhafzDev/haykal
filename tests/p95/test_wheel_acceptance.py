@@ -65,7 +65,7 @@ def test_stale_gate_changes_material_and_restarts_reference_app(
         skill_smoke,
         "connect",
         lambda _serial: lambda **_selector: type(
-            "Visible", (), {"wait": lambda self, timeout: timeout == 10}
+            "Visible", (), {"wait": lambda self, timeout: timeout == 30}
         )(),
     )
     _change_checkout_price("emulator-5554")
