@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+import haykal.m4.skill_smoke as skill_smoke
 from haykal.m4.skill_smoke import _change_checkout_price
 
 
@@ -60,6 +61,13 @@ def test_stale_gate_changes_material_and_restarts_reference_app(
 
     monkeypatch.setenv("HAYKAL_ADB_PATH", "/sdk/adb")
     monkeypatch.setattr(subprocess, "run", run)
+    monkeypatch.setattr(
+        skill_smoke,
+        "connect",
+        lambda _serial: lambda **_selector: type(
+            "Visible", (), {"wait": lambda self, timeout: timeout == 10}
+        )(),
+    )
     _change_checkout_price("emulator-5554")
 
     assert len(commands) == 3

@@ -13,6 +13,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 import yaml
+from uiautomator2 import connect  # type: ignore[import-untyped]
 
 from haykal.contracts import RunRequest, Skill
 from haykal.runtime import build_runtime
@@ -136,6 +137,9 @@ def _change_checkout_price(serial: str) -> None:
     )
     for command in commands:
         subprocess.run(command, check=True, capture_output=True, text=True, timeout=20)
+    device = connect(serial)
+    if not device(resourceId="dev.haykal.refapps.matjar:id/total").wait(timeout=10):
+        raise RuntimeError("changed Matjar checkout did not become observable")
 
 
 def main(argv: Sequence[str] | None = None) -> int:
