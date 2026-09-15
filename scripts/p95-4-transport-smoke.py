@@ -44,7 +44,7 @@ async def _mcp_smoke(serial: str, state: Path) -> dict[str, object]:
 
 def _http_smoke(serial: str, adb: str, state: Path) -> dict[str, object]:
     state.mkdir(parents=True, mode=0o700, exist_ok=False)
-    ArtifactStore(state / "artifacts")
+    ArtifactStore(state / "artifacts").put(b"p95-4-readiness-probe")
 
     async def factory(session_id: str, target: str):
         return build_runtime(serial=target, session_id=session_id, state_directory=state)
