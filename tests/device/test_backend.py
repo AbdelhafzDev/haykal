@@ -8,6 +8,7 @@ import pytest
 
 from haykal.device.backend import (
     DeviceBackendTimeout,
+    DeviceBackendUnavailable,
     IrreversibleDispatchUnavailable,
     Uiautomator2Backend,
 )
@@ -95,6 +96,24 @@ async def test_backend_recovers_once_from_sync_failure() -> None:
 
 
 @pytest.mark.asyncio
+async def test_backend_reports_unavailable_after_one_failed_restart() -> None:
+    client = FakeClient()
+    restarts: list[object] = []
+
+    def unavailable(*, compressed: bool) -> str:
+        del compressed
+        raise ConnectionError("injected ADB disconnect")
+
+    client.dump_hierarchy = unavailable  # type: ignore[method-assign]
+    backend = Uiautomator2Backend(lambda: client, restart=restarts.append)
+    await backend.open()
+
+    with pytest.raises(DeviceBackendUnavailable, match="ADB disconnect"):
+        await backend.hierarchy()
+    assert restarts == [client]
+
+
+@pytest.mark.asyncio
 async def test_backend_timeout_is_bounded() -> None:
     client = FakeClient()
 
@@ -135,6 +154,38 @@ async def test_durable_uiautomator_single_shot_never_replays_click(tmp_path: Pat
     assert second.status == "dispatched"
     assert second.repeated_request is True
     assert client.calls.count(("click", 10, 20)) == 1
+
+
+@pytest.mark.asyncio
+async def test_interrupted_irreversible_transport_is_unknown_and_never_retried(
+    tmp_path: Path,
+) -> None:
+    client = FakeClient()
+    attempts = 0
+
+    def disconnect(_x: int, _y: int) -> None:
+        nonlocal attempts
+        attempts += 1
+        raise ConnectionError("injected disconnect after send")
+
+    client.click = disconnect  # type: ignore[method-assign]
+    backend = Uiautomator2Backend(
+        lambda: client,
+        irreversible_database=tmp_path / "single-shot.sqlite3",
+    )
+    await backend.open()
+
+    first = await backend.dispatch_once(
+        action_id="purchase-unknown", method="tap", params={"x": 10, "y": 20}
+    )
+    second = await backend.dispatch_once(
+        action_id="purchase-unknown", method="tap", params={"x": 10, "y": 20}
+    )
+
+    assert first.status == "outcome_unknown"
+    assert second.status == "outcome_unknown"
+    assert second.repeated_request is True
+    assert attempts == 1
 
 
 @pytest.mark.asyncio

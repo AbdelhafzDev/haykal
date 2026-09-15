@@ -3,6 +3,9 @@ set -euo pipefail
 
 project_dir="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 report_dir="$project_dir/reports/m5"
+: "${ANDROID_SDK_ROOT:?Set ANDROID_SDK_ROOT to the Android SDK directory}"
+serial="${ANDROID_SERIAL:-emulator-5554}"
+adb="$ANDROID_SDK_ROOT/platform-tools/adb"
 
 "$project_dir/scripts/phase4-reference-check.sh"
 mkdir -p "$report_dir"
@@ -35,7 +38,8 @@ temporary="$(mktemp -d)"
 trap 'rm -rf -- "$temporary"' EXIT
 uv run haykal --state-dir "$run_root" backup --output "$temporary/state.tar.gz" >/dev/null
 uv run haykal restore "$temporary/state.tar.gz" --destination "$temporary/restored" >/dev/null
-uv run haykal --state-dir "$temporary/restored" diagnostics >/dev/null
+uv run haykal --state-dir "$temporary/restored" diagnostics \
+  --device "$serial" --adb-path "$adb" >/dev/null
 
 test -s "$report_dir/trace-example/index.html"
 test -s "$report_dir/trace-example/trace.json"

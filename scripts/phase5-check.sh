@@ -20,7 +20,10 @@ chmod 700 "$temporary"
 uv run haykal --state-dir "$temporary/state" hardening-run \
   --duration-s 0.25 --workers 2 --chaos-every 7 \
   --output "$temporary/hardening.json" --output-state "$temporary/state" >/dev/null
-uv run haykal --state-dir "$temporary/state" diagnostics >"$temporary/diagnostics.json"
+uv run haykal fault-matrix --output-state "$temporary/fault-state" \
+  --output "$temporary/fault-matrix.json" >/dev/null
+uv run haykal --state-dir "$temporary/state" diagnostics --storage-only \
+  >"$temporary/diagnostics.json"
 uv run haykal sbom --project-root "$project_dir" \
   --output "$temporary/sbom.cdx.json" --licenses "$temporary/licenses.md" >/dev/null
 uv run python - "$temporary" <<'PY'
@@ -32,13 +35,16 @@ root = Path(sys.argv[1])
 hardening = json.loads((root / "hardening.json").read_text())
 diagnostics = json.loads((root / "diagnostics.json").read_text())
 sbom = json.loads((root / "sbom.cdx.json").read_text())
+faults = json.loads((root / "fault-matrix.json").read_text())
 assert hardening["operations"] > 0
 assert hardening["unexpected_failures"] == 0
 assert diagnostics["status"] == "ready"
+assert faults["passed"] is True and len(faults["observations"]) == 9
 assert sbom["bomFormat"] == "CycloneDX" and sbom["specVersion"] == "1.6"
 PY
 
 uv venv "$temporary/venv" --python 3.13 >/dev/null
 wheel="$(find dist -maxdepth 1 -name '*.whl' -print | sort | tail -n 1)"
 uv pip install --python "$temporary/venv/bin/python" "$wheel" >/dev/null
-"$temporary/venv/bin/haykal" --state-dir "$temporary/clean-state" diagnostics >/dev/null
+"$temporary/venv/bin/haykal" --state-dir "$temporary/clean-state" diagnostics \
+  --storage-only >/dev/null

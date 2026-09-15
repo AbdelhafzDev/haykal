@@ -22,6 +22,7 @@ from haykal.contracts import ExtractionRequest, Selector, SemanticScene, Skill
 from haykal.contracts.action import ResolutionPolicy
 from haykal.extraction import ExtractionEngine
 from haykal.hardening import (
+    AndroidDeviceDiagnostics,
     Diagnostics,
     RedactionPolicy,
     RetentionPolicy,
@@ -33,6 +34,7 @@ from haykal.hardening import (
     report_digest,
     run_storage_reliability,
 )
+from haykal.hardening.faults import run_fault_matrix
 from haykal.resolver import AmbiguousTarget, TargetResolutionError, TargetResolver
 from haykal.runtime import build_runtime
 from haykal.skills import PublisherKeyPair, SkillRegistry, TrustPolicy, sign_skill
@@ -168,8 +170,11 @@ def _serve(args: argparse.Namespace) -> int:
     if args.approver_token is not None and args.approver_token == args.token:
         raise ValueError("caller and approver credentials must be different")
     traces = TraceStore(root / "runtime.sqlite3")
+    ArtifactStore(root / "artifacts")
 
     async def factory(session_id: str, serial: str) -> Any:
+        if args.device_serial and serial != args.device_serial:
+            raise ValueError("requested device is not the configured target")
         return build_runtime(
             serial=serial,
             session_id=session_id,
@@ -203,7 +208,18 @@ def _serve(args: argparse.Namespace) -> int:
         bearer_token=args.token,
         skill_engine=engine,
         approver_token=args.approver_token,
-        diagnostics=Diagnostics(root),
+        diagnostics=Diagnostics(
+            root,
+            device_probe=(
+                AndroidDeviceDiagnostics(
+                    args.device_serial,
+                    root / "runtime.sqlite3",
+                    adb_path=args.adb_path,
+                )
+                if args.device_serial
+                else None
+            ),
+        ),
         redaction_policy=_redaction_policy(args.redaction_policy),
     )
     uvicorn.run(app, host=args.host, port=args.port)
@@ -283,7 +299,21 @@ def _benchmark(args: argparse.Namespace) -> int:
 
 
 def _diagnostics(args: argparse.Namespace) -> int:
-    report = Diagnostics(args.state_dir).run()
+    if args.storage_only and args.device:
+        raise ValueError("--storage-only and --device are mutually exclusive")
+    report = Diagnostics(
+        args.state_dir,
+        device_probe=(
+            AndroidDeviceDiagnostics(
+                args.device,
+                Path(args.state_dir) / "runtime.sqlite3",
+                adb_path=args.adb_path,
+            )
+            if args.device
+            else None
+        ),
+        require_device=not args.storage_only,
+    ).run()
     _write(report.as_dict())
     return 2 if report.status == "unhealthy" else 0
 
@@ -369,6 +399,24 @@ def _hardening_run(args: argparse.Namespace) -> int:
         )
     _write(payload)
     return 0 if report.unexpected_failures == 0 else 2
+
+
+def _fault_matrix(args: argparse.Namespace) -> int:
+    report = run_fault_matrix(
+        args.output_state,
+        serial=args.device,
+        adb_path=args.adb_path,
+    )
+    payload = report.as_dict()
+    if args.output:
+        output = Path(args.output)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+    _write(payload)
+    return 0 if report.passed else 2
 
 
 def _mcp(args: argparse.Namespace) -> int:
@@ -471,6 +519,9 @@ def _parser() -> argparse.ArgumentParser:
     benchmark.set_defaults(handler=_benchmark)
 
     diagnostics = commands.add_parser("diagnostics", help="inspect runtime health without secrets")
+    diagnostics.add_argument("--device")
+    diagnostics.add_argument("--adb-path")
+    diagnostics.add_argument("--storage-only", action="store_true")
     diagnostics.set_defaults(handler=_diagnostics)
 
     trace_export = commands.add_parser("trace-export", help="write a redacted static trace report")
@@ -510,6 +561,15 @@ def _parser() -> argparse.ArgumentParser:
     hardening.add_argument("--output-state")
     hardening.set_defaults(handler=_hardening_run)
 
+    faults = commands.add_parser(
+        "fault-matrix", help="run externally supervised process/storage/device faults"
+    )
+    faults.add_argument("--output-state", required=True)
+    faults.add_argument("--output")
+    faults.add_argument("--device")
+    faults.add_argument("--adb-path")
+    faults.set_defaults(handler=_fault_matrix)
+
     serve = commands.add_parser("serve", help="serve authenticated HTTP/SSE")
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=8421)
@@ -519,6 +579,8 @@ def _parser() -> argparse.ArgumentParser:
     serve.add_argument("--trust-policy", default=os.environ.get("HAYKAL_TRUST_POLICY"))
     serve.add_argument("--redaction-policy", default=os.environ.get("HAYKAL_REDACTION_POLICY"))
     serve.add_argument("--allow-remote-behind-tls", action="store_true")
+    serve.add_argument("--device-serial", default=os.environ.get("HAYKAL_DEVICE_SERIAL"))
+    serve.add_argument("--adb-path", default=os.environ.get("HAYKAL_ADB_PATH"))
     serve.set_defaults(handler=_serve)
 
     keygen = commands.add_parser("skill-keygen", help="generate an Ed25519 publisher key pair")

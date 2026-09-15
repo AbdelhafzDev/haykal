@@ -186,11 +186,24 @@ def create_app(
     def session_for(request: Request) -> RuntimeSession:
         return sessions.get(request.path_params["session_id"])
 
+    async def live(_request: Request) -> Response:
+        return JSONResponse({"status": "live"})
+
     async def health(_request: Request) -> Response:
         if diagnostics is None:
-            return JSONResponse({"status": "ready", "version": "unknown", "checks": {}})
-        report = diagnostics.run()
+            return JSONResponse({"status": "degraded", "version": "unknown", "checks": {}})
+        report = await asyncio.to_thread(diagnostics.run)
         status = 503 if report.status == "unhealthy" else 200
+        return JSONResponse(report.as_dict(public=True), status_code=status)
+
+    async def ready(_request: Request) -> Response:
+        if diagnostics is None:
+            return JSONResponse(
+                {"status": "unhealthy", "version": "unknown", "checks": {}},
+                status_code=503,
+            )
+        report = await asyncio.to_thread(diagnostics.run)
+        status = 200 if report.status == "ready" else 503
         return JSONResponse(report.as_dict(public=True), status_code=status)
 
     async def detailed_diagnostics(request: Request) -> Response:
@@ -198,7 +211,7 @@ def create_app(
             return _error("unauthorized", "valid bearer token required", 401)
         if diagnostics is None:
             return _error("not_found", "diagnostics are not configured", 404)
-        report = diagnostics.run()
+        report = await asyncio.to_thread(diagnostics.run)
         status = 503 if report.status == "unhealthy" else 200
         return JSONResponse(report.as_dict(), status_code=status)
 
@@ -406,7 +419,9 @@ def create_app(
         return await mutate(request, operation)
 
     routes = [
+        Route("/livez", live, methods=["GET"]),
         Route("/healthz", health, methods=["GET"]),
+        Route("/readyz", ready, methods=["GET"]),
         Route("/v1/diagnostics", detailed_diagnostics, methods=["GET"]),
         Route("/v1/sessions", create_session, methods=["POST"]),
         Route("/v1/sessions/{session_id:str}/observe", observe, methods=["POST"]),

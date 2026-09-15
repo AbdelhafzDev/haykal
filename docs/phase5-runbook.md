@@ -14,15 +14,22 @@ clean virtual-environment wheel installation.
 ## Diagnostics and health
 
 ```bash
-haykal --state-dir /var/lib/haykal diagnostics
+haykal --state-dir /var/lib/haykal diagnostics \
+  --device emulator-5554 --adb-path "$ANDROID_SDK_ROOT/platform-tools/adb"
+curl http://127.0.0.1:8421/livez
 curl http://127.0.0.1:8421/healthz
+curl http://127.0.0.1:8421/readyz
 curl -H "Authorization: Bearer $HAYKAL_API_TOKEN" \
   http://127.0.0.1:8421/v1/diagnostics
 ```
 
-`/healthz` deliberately omits paths, timestamps, device identifiers, and failure
-details. The authenticated endpoint returns database, state permission, disk, and
-artifact-integrity details.
+`/livez` proves only that the process/event loop responds. `/healthz` is the
+minimal compatibility aggregate. `/readyz` returns 200 only when storage, disk,
+ADB authorization, the configured target, lease, UIAutomator2 helper, and pending
+recovery checks all pass; degraded and unhealthy states return 503. Public
+responses omit paths, timestamps, serials, and failure details. The authenticated
+endpoint returns the detailed checks. Use `diagnostics --storage-only` only for
+offline maintenance; it is not device readiness.
 
 ## Static trace report and retention
 
@@ -62,7 +69,23 @@ It reruns both Phase 4 lifecycles, exports a private static trace, snapshots liv
 SQLite state, restores it into an empty directory, and runs diagnostics.
 The hosted workflow runs this on Android API 34 and 35.
 
-## Load, chaos, and soak
+## Fault matrix, load, and soak
+
+Run the host process/SQLite/artifact/lease/settings/disk matrix into a new
+directory:
+
+```bash
+haykal fault-matrix --output-state /empty/p95-2-fault-state \
+  --output reports/p95-2/fault-matrix.json
+```
+
+With a dedicated emulator, add UIAutomator2 death, target-scoped ADB reconnect,
+IME restore, and readiness transitions:
+
+```bash
+ANDROID_SDK_ROOT=/opt/android-sdk ANDROID_SERIAL=emulator-5554 \
+  ./scripts/p95-2-device-check.sh /empty/p95-2-device-evidence
+```
 
 A bounded component run:
 
@@ -71,7 +94,10 @@ haykal hardening-run --duration-s 60 --workers 4 --chaos-every 37 \
   --output reports/m5/storage-hardening.json
 ```
 
-The release device soak is intentionally separate:
+The report contains sampled RSS, file/artifact/SQLite bytes, open descriptors,
+latencies, recovery counts, growth slopes, and explicit absolute limits. A
+30-minute run is the P95.2 development gate. The release device soak remains
+separate:
 
 ```bash
 HAYKAL_SOAK_DURATION_S=28800 ./scripts/phase5-device-soak.sh

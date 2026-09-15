@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 from starlette.testclient import TestClient
 
+from haykal.artifacts import ArtifactStore
 from haykal.contracts import (
     ActionResult,
     ExpectationResult,
@@ -160,6 +161,36 @@ def test_authentication_and_durable_idempotency_replay(tmp_path: Path) -> None:
 def test_health_is_minimal_and_diagnostics_require_authentication(tmp_path: Path) -> None:
     state = tmp_path / "state"
     state.mkdir(mode=0o700)
+    ArtifactStore(state / "artifacts").put(b"health-evidence")
+
+    async def factory(session_id: str, _serial: str) -> Session:
+        return Session(session_id)
+
+    app = create_app(
+        sessions=SessionRegistry(factory),  # type: ignore[arg-type]
+        idempotency=IdempotencyStore(state / "runtime.sqlite3"),
+        traces=TraceStore(state / "runtime.sqlite3"),
+        bearer_token="secret",
+        diagnostics=Diagnostics(state, minimum_free_bytes=1, require_device=False),
+    )
+    with TestClient(app) as client:
+        assert client.get("/livez").json() == {"status": "live"}
+        public = client.get("/healthz")
+        assert public.status_code == 200
+        assert "generated_at" not in public.json()
+        ready = client.get("/readyz")
+        assert ready.status_code == 200
+        assert ready.json()["status"] == "ready"
+        assert client.get("/v1/diagnostics").status_code == 401
+        detailed = client.get("/v1/diagnostics", headers={"Authorization": "Bearer secret"})
+        assert detailed.status_code == 200
+        assert detailed.json()["checks"]
+
+
+def test_liveness_stays_up_while_missing_device_fails_readiness(tmp_path: Path) -> None:
+    state = tmp_path / "state"
+    state.mkdir(mode=0o700)
+    ArtifactStore(state / "artifacts").put(b"health-evidence")
 
     async def factory(session_id: str, _serial: str) -> Session:
         return Session(session_id)
@@ -171,14 +202,13 @@ def test_health_is_minimal_and_diagnostics_require_authentication(tmp_path: Path
         bearer_token="secret",
         diagnostics=Diagnostics(state, minimum_free_bytes=1),
     )
+
     with TestClient(app) as client:
-        public = client.get("/healthz")
-        assert public.status_code == 200
-        assert "generated_at" not in public.json()
-        assert client.get("/v1/diagnostics").status_code == 401
-        detailed = client.get("/v1/diagnostics", headers={"Authorization": "Bearer secret"})
-        assert detailed.status_code == 200
-        assert detailed.json()["checks"]
+        assert client.get("/livez").status_code == 200
+        assert client.get("/healthz").status_code == 503
+        readiness = client.get("/readyz")
+        assert readiness.status_code == 503
+        assert readiness.json()["status"] == "unhealthy"
 
 
 def test_approval_authority_cannot_reuse_the_caller_credential(tmp_path: Path) -> None:

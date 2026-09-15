@@ -24,10 +24,6 @@ from haykal.transports.mcp import create_mcp_server
 from tests.workflows.test_engine import Backend as SkillBackend
 from tests.workflows.test_engine import _system as skill_system
 
-READINESS_LOCK = pytest.mark.xfail(
-    strict=True,
-    reason="P95.2: diagnostics do not yet include device readiness",
-)
 BENCHMARK_LOCK = pytest.mark.xfail(
     strict=True,
     reason="P95.3: benchmark success is not yet computed by an independent oracle",
@@ -245,7 +241,6 @@ def test_trace_export_rejects_artifact_without_matching_image_region(tmp_path: P
     assert not (tmp_path / "report").exists()
 
 
-@READINESS_LOCK
 def test_storage_health_is_not_device_readiness(tmp_path: Path) -> None:
     state = tmp_path / "state"
     state.mkdir(mode=0o700)

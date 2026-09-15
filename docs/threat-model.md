@@ -24,7 +24,7 @@ screenshots, approval capability, skill signing keys, and execution history.
 | Dependency/model compromise | high | Locked Python graph, SBOM/license evidence, replaceable model adapter, no production model download at runtime | Python controls implemented; OCR/vision selection still blocking |
 | Cross-session leakage | high | Exclusive lease and session-scoped identities; content-addressed artifacts remain deployment-scoped | multi-tenant use unsupported |
 | Path traversal during restore | high | Manual archive extraction rejects absolute/traversal/link/device members and verifies declared digests | resolved and tested |
-| Resource exhaustion | medium | Bounded scene history, step/scroll/decision limits, configurable retention, planned P95.2 externally injected fault/growth harness | current harness is a storage-concurrency smoke; real failure and eight-hour device evidence pending |
+| Resource exhaustion and interrupted infrastructure | medium | Bounded scene history and workflow limits; externally supervised process/SQLite/artifact/lease/disk faults; live ADB/helper/IME recovery; sampled resource limits and online trace retention | P95.2 implementation and 30-minute development evidence complete locally; the eight-hour release soak remains P95.5 |
 
 Any regression in a critical row blocks release. High residual conditions marked
 as deployment blockers must be checked in the deployment acceptance record.

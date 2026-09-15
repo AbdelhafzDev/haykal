@@ -1,7 +1,12 @@
 """Operational hardening, privacy, backup, and release evidence helpers."""
 
 from .backup import BackupError, StateBackup
-from .health import DiagnosticCheck, DiagnosticReport, Diagnostics
+from .health import (
+    AndroidDeviceDiagnostics,
+    DiagnosticCheck,
+    DiagnosticReport,
+    Diagnostics,
+)
 from .privacy import (
     ImageRedactionError,
     ImageRegion,
@@ -15,6 +20,7 @@ from .supply_chain import build_license_report, build_sbom
 from .trace_report import TraceExport, TraceReportExporter
 
 __all__ = [
+    "AndroidDeviceDiagnostics",
     "BackupError",
     "DiagnosticCheck",
     "DiagnosticReport",

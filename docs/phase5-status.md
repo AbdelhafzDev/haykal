@@ -21,8 +21,8 @@ release criterion.
 
 ## Implemented
 
-- Minimal unauthenticated `/healthz`, authenticated `/v1/diagnostics`, and the
-  `haykal diagnostics` command.
+- Distinct unauthenticated `/livez`, `/healthz`, and device-aware `/readyz`, plus
+  authenticated `/v1/diagnostics` and the `haykal diagnostics` command.
 - Default-redacted HTTP, SSE, MCP/runtime trace reads and a database-independent
   static HTML/JSON trace exporter.
 - Recursive key/literal/email/phone/card redaction, private-by-default images,
@@ -32,8 +32,10 @@ release criterion.
   publication, safe extraction, integrity verification, and empty-target restore.
 - CycloneDX 1.6 SBOM and Markdown dependency-license generation from the locked
   installed environment.
-- Bounded concurrent storage load/soak/chaos harness with latency, failures,
-  integrity, memory, state-size, and honest eight-hour eligibility fields.
+- Externally supervised process/SQLite/artifact/lease/settings/disk fault matrix,
+  live UIAutomator2/ADB/IME recovery checks, and a bounded soak with real injected
+  faults, latency/resource time series, growth limits, and honest 30-minute and
+  eight-hour eligibility fields.
 - Clean-wheel installation check and Android API 34/35 reference acceptance jobs.
 - Expanded comparative report layout with per-run logs, preserved configs/tasks,
   methodology, track-safe summaries, and immutable output destination.
@@ -45,31 +47,31 @@ release criterion.
 
 ## Latest local evidence
 
-- Host gate after P95.1: 499 tests passed, 3 intentionally locked tests remained,
-  and coverage was 85.66%; Ruff, strict mypy over 96
-  source files, 21 schema generation, package build, and Actionlint passed.
-- A newly created Python 3.13 virtual environment installed the built wheel and
-  executed the diagnostics command successfully.
-- Android API 37: both Matjar lifecycle scenarios passed; a redacted static trace
-  was exported, live state was backed up and restored, and restored diagnostics
-  passed.
-- Bounded storage smoke: 2,688 successful operations, 166 injected interruptions,
-  zero unexpected failures, and zero artifact-integrity failures. Its one-second
-  duration makes it ineligible for the eight-hour gate.
+- Host gate after P95.2: 508 tests passed, 2 intentionally locked P95.3 tests
+  remained, and coverage was 84.62%; Ruff, strict mypy over 97 source files, 21
+  schema generation, package build, clean wheel installation, secret scan,
+  dependency audit, and Actionlint passed.
+- A clean API 37 device run passed all 12 process/storage/device fault rows and
+  the connected/absent readiness transition. Both prior Matjar lifecycle
+  scenarios, static trace export, backup, and restore also passed on API 37.
+- The 30-minute storage profile completed 2,747,317 operations with 74,250
+  injected and detected faults, zero unexpected/integrity failures, 6.48 ms p95,
+  84.4 MB peak RSS, and non-positive stabilized state/RSS slopes. Its P95.2
+  eligibility flag is true; the separate eight-hour P95.5 flag remains false.
 
 ## Release-gate status
 
 | Criterion | Status | Evidence or blocker |
 | --- | --- | --- |
-| Repository/host provenance | blocking | repository tree is not yet committed; hosted CI and reviewable commit provenance are absent |
+| Repository/host provenance | partial, blocking | local phase commits and clean-tree evidence exist; hosted CI is absent because no remote is configured |
 | Host release and clean-wheel gate | partial, blocking | host tests and isolated installation pass, but the installed wheel has not run the Android E2E lifecycle |
 | Clean API 34/35 reference VMs | configured, not observed | API 37 local VM passed; hosted matrix has not run because this repository has no remote/commit |
 | Static trace usable without DB | passed locally | exporter tests and API 37 live trace export |
 | Redaction and retention | privacy defect fixed locally; later evidence remains | P95.1 aborts the whole image export for absent, mismatched, malformed, or out-of-bounds coverage; retention reachability is still outside this phase |
 | Backup and recovery | passed locally | tests plus API 37 live-state backup/restore/diagnostics |
 | Effective risk/approval floor | passed locally | P95.1 reclassifies resolved targets for Python, HTTP, MCP, recovery, and skills; bound permits and single-shot dispatch are permanent regressions and passed on API 37 Matjar |
-| Device readiness | failed, blocking | health checks storage only and can return ready without a usable authorized device |
-| Load/chaos harness | partial, blocking | the smoke exercises storage concurrency, but interruption counters do not inject process, database, backend, ADB, lease, or device failures |
+| Device readiness | passed locally | missing/unauthorized targets, helper death, expired lease, pending recovery, and disk pressure fail readiness; live connected/absent API 37 transitions passed |
+| Fault injection and bounded growth | passed for P95.2 locally | 12-row host/device matrix passed and the 30-minute real-fault soak stayed within declared resource/growth limits |
 | Eight-hour device soak | not run, blocking | requires 28,800 uninterrupted seconds on the release VM |
 | Critical/high threat findings | P95.1 findings closed locally | downgrade and image-export defects are closed by adversarial, property, corpus, and live Matjar evidence; later phase blockers keep the overall release no-go |
 | Comparative benchmark | failed design plus external blocker | results are adapter-reported rather than independently read from Matjar; no pinned runnable Agent Device adapter is supplied |

@@ -16,7 +16,8 @@ uv build
 python3 -m venv /opt/haykal/venv
 /opt/haykal/venv/bin/pip install dist/haykal_runtime-0.0.1-py3-none-any.whl
 HAYKAL_API_TOKEN="$(openssl rand -hex 32)" \
-  /opt/haykal/venv/bin/haykal --state-dir /var/lib/haykal serve
+  /opt/haykal/venv/bin/haykal --state-dir /var/lib/haykal serve \
+  --device-serial emulator-5554 --adb-path /opt/android-sdk/platform-tools/adb
 ```
 
 Keep caller, approver, and approval-signing credentials distinct. Bind to
@@ -26,7 +27,8 @@ loopback. A non-loopback bind is refused unless the operator explicitly supplies
 ## Upgrade
 
 1. Stop accepting new sessions and allow current runs to reach a durable pause.
-2. Run `haykal --state-dir STATE diagnostics` and create a backup.
+2. Run `haykal --state-dir STATE diagnostics --device SERIAL --adb-path ADB` and
+   create a backup.
 3. Install the new wheel in a new virtual environment; do not mutate the old one.
 4. Run diagnostics and the shipped smoke checks against a restored copy.
 5. Switch the service atomically. Keep the old environment and backup until the
@@ -53,7 +55,7 @@ Restore never overwrites a populated directory:
 ```bash
 haykal restore /secure/haykal-2026-09-13.tar.gz \
   --destination /var/lib/haykal-restored
-haykal --state-dir /var/lib/haykal-restored diagnostics
+haykal --state-dir /var/lib/haykal-restored diagnostics --storage-only
 ```
 
 The restore rejects traversal links, devices, undeclared files, and digest

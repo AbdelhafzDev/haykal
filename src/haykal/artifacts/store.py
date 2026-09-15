@@ -26,6 +26,9 @@ class ArtifactStore:
     def __init__(self, root: str | Path) -> None:
         self.root = Path(root)
         self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
+        for temporary in self.root.glob("sha256/*/.artifact-*"):
+            with suppress(OSError):
+                temporary.unlink()
 
     @staticmethod
     def digest(data: bytes) -> str:
