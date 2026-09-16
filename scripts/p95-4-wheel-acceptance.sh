@@ -77,6 +77,7 @@ skill = Skill.model_validate({
         "app_versions": ">=1,<2",
         "locales": ["ar-SA"],
     },
+    "elements": {},
     "start": "finish",
     "states": {"finish": {"terminal": "completed"}},
 })
