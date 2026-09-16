@@ -50,6 +50,9 @@ class FakeClient:
     def send_keys(self, text: str, *, clear: bool) -> None:
         self.calls.append(("send_keys", text, clear))
 
+    def set_input_ime(self, enable: bool = True) -> None:
+        self.calls.append(("set_input_ime", enable))
+
     def press(self, key: str) -> None:
         self.calls.append(("press", key))
 
@@ -79,7 +82,9 @@ async def test_backend_operations_and_ime_restore() -> None:
     await backend.close()
 
     assert ("shell", "ime", "set", "com.example/.Ime") in client.calls
+    assert ("set_input_ime", True) in client.calls
     assert ("send_keys", "بيتزا", False) in client.calls
+    assert ("send_keys", "", False) not in client.calls
     assert ("shell", "am", "broadcast", "-a", "ADB_KEYBOARD_CLEAR_TEXT") in client.calls
 
 
