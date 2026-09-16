@@ -312,6 +312,12 @@ class SkillEngine:
             if action is not None:
                 validated_approval: ValidatedApproval | None = None
                 try:
+                    await runtime.reveal(
+                        action,
+                        run_id=snapshot.run_id,
+                        trace_id=snapshot.trace_id,
+                        record_anchors=anchors,
+                    )
                     resolution = await runtime.resolve(action, record_anchors=anchors)
                 except ValueError:
                     return self._pause(

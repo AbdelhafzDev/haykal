@@ -10,6 +10,7 @@ from haykal.contracts.action import ActionTarget, Risk, SemanticAction
 from haykal.contracts.selector import ResourceMatch, Selector
 from haykal.device import DeviceHealth, DeviceSnapshot
 from haykal.device.single_shot import DispatchOutcome
+from haykal.resolver import TargetNotFound
 from haykal.runtime import RuntimeSession
 from haykal.traces import TraceStore
 
@@ -127,6 +128,24 @@ async def test_runtime_scrolls_settles_and_deduplicates_records(tmp_path: Path) 
     source = runtime._source_scene(action, {"chosen": first_anchor})
     assert source is not None
     assert source.revision == first_anchor.scene_revision
+    with pytest.raises(TargetNotFound):
+        await runtime.resolve(action, record_anchors={"chosen": first_anchor})
+    assert backend.page == 2
+
+    revealed = await runtime.reveal(
+        action,
+        run_id="run-reveal",
+        trace_id="trace-reveal",
+        record_anchors={"chosen": first_anchor},
+    )
+    assert revealed is True
+    assert backend.page == 0
+    reveal_events = runtime.trace("trace-reveal")
+    assert [
+        event["payload"]["action_id"]
+        for event in reveal_events
+        if event["event_type"] == "action.dispatched"
+    ] == ["selected-record:reveal:1", "selected-record:reveal:2"]
+
     resolution = await runtime.resolve(action, record_anchors={"chosen": first_anchor})
     assert resolution["accepted"] is True
-    assert backend.page == 0

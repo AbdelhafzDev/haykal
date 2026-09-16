@@ -35,15 +35,19 @@ Start with the [MVP plan](docs/plan/README.md). The written plan currently score
 [95/100](docs/plan/09-readiness-scorecard.md); the remaining five points require
 Milestone 0 evidence and cannot be earned by documentation alone.
 The post-Phase-5 implementation review started stable-MVP readiness at 70/100.
-After the locally completed P95.4 shipped-wheel matrix, the honest current score
-is **89/100 official**, or **91/100 conditional** on the still-missing hosted
-fresh-checkout run. The release decision remains no-go. Follow the phased
+The P95.4 review reduced the defensible implementation score to **85/100** after
+finding release-boundary defects in record relocation, stale rebinding, build
+provenance, and acceptance assertions. Focused P95.4R remediation targets release
+`0.0.3`; its implementation is complete but its new clean API 34/35 evidence and
+hosted fresh-checkout run are still pending. The release decision remains no-go.
+Follow the phased
 [Path to 95](docs/plan/10-path-to-95.md), the
 [P95.1 safety/privacy record](docs/p95-1-status.md), the
 [P95.2 reliability/readiness record](docs/p95-2-status.md), and the
 [P95.3 benchmark record](docs/p95-3-status.md). P95.4 shipped-wheel acceptance is
 implemented but does not earn its forecast score until the clean API 34/35
 matrix passes; see the [P95.4 status](docs/p95-4-status.md) and
+[P95.4R remediation status](docs/p95-4r-status.md), plus the
 [runbook](docs/p95-4-runbook.md). This implementation score is
 separate from the written-plan score.
 

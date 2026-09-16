@@ -33,6 +33,66 @@ venv="$temporary/wheel-env"
 "$uv_bin" pip install --python "$venv/bin/python" "$bundle/$previous_wheel" \
   >"$evidence/logs/install-previous.txt" 2>&1
 "$venv/bin/python" -m pip show haykal-runtime >"$evidence/reports/package-previous.txt"
+PYTHONPATH= PYTHONNOUSERSITE=1 "$venv/bin/python" - \
+  "$temporary/upgrade-state" "$evidence/reports/upgrade-seed.json" <<'PY'
+import json
+import sys
+from datetime import UTC, datetime
+from pathlib import Path
+
+from haykal.artifacts import ArtifactStore
+from haykal.contracts import RunSnapshot, Skill
+from haykal.skills import PublisherKeyPair, SkillRegistry, TrustPolicy, sign_skill
+from haykal.traces import TraceStore
+from haykal.workflows import ApprovalService, RunJournal
+
+root = Path(sys.argv[1])
+database = root / "runtime.sqlite3"
+artifact = ArtifactStore(root / "artifacts").put(b"p95-4-upgrade-artifact")
+traces = TraceStore(database)
+trace_id = traces.new_trace_id()
+traces.append(trace_id=trace_id, run_id="upgrade-run", event_type="run.started")
+journal = RunJournal(database)
+now = datetime.now(UTC)
+journal.create(RunSnapshot(
+    run_id="upgrade-run",
+    trace_id=trace_id,
+    session_id="upgrade-session",
+    skill="upgrade.fixture",
+    skill_digest="sha256:" + "1" * 64,
+    state="finish",
+    status="completed",
+    created_at=now,
+    updated_at=now,
+))
+journal.claim_action("upgrade-run", "upgrade-action", "sha256:" + "2" * 64)
+journal.finish_action("upgrade-run", "upgrade-action", status="committed", result={"ok": True})
+ApprovalService(database, signing_secret=b"p95-4-upgrade-secret".ljust(32, b"!"))
+keys = PublisherKeyPair.generate()
+skill = Skill.model_validate({
+    "metadata": {
+        "name": "upgrade.fixture",
+        "version": "1.0.0",
+        "package": "dev.haykal.fixture",
+        "app_versions": ">=1,<2",
+        "locales": ["ar-SA"],
+    },
+    "start": "finish",
+    "states": {"finish": {"terminal": "completed"}},
+})
+signed = sign_skill(skill, publisher="p95-4", private_key=keys.private_key)
+SkillRegistry(
+    database,
+    root / "skill-objects",
+    trust_policy=TrustPolicy({"p95-4": keys.public_key}),
+).publish(signed.model_dump(mode="json", by_alias=True))
+Path(sys.argv[2]).write_text(json.dumps({
+    "artifact_digest": artifact.digest,
+    "trace_id": trace_id,
+    "publisher_public_key": keys.public_key,
+    "skill_digest": signed.metadata.content_digest,
+}, indent=2, sort_keys=True) + "\n")
+PY
 PYTHONPATH= PYTHONNOUSERSITE=1 "$venv/bin/haykal" --state-dir "$temporary/upgrade-state" \
   hardening-run --duration-s 0.2 --workers 1 --chaos-every 1000 \
   --output "$evidence/reports/previous-state-run.json" \
@@ -46,6 +106,57 @@ PYTHONPATH= PYTHONNOUSERSITE=1 "$venv/bin/haykal" --state-dir "$temporary/upgrad
 "$venv/bin/python" -m pip show haykal-runtime >"$evidence/reports/package-current.txt"
 PYTHONPATH= PYTHONNOUSERSITE=1 "$venv/bin/haykal" --state-dir "$temporary/upgrade-state" \
   diagnostics --storage-only >"$evidence/reports/upgrade-diagnostics.json"
+PYTHONPATH= PYTHONNOUSERSITE=1 "$venv/bin/python" - \
+  "$temporary/upgrade-state" "$evidence/reports/upgrade-seed.json" \
+  "$evidence/reports/upgrade-state-verification.json" <<'PY'
+import json
+import sqlite3
+import sys
+from pathlib import Path
+
+from haykal.artifacts import ArtifactStore
+from haykal.skills import SkillRegistry, TrustPolicy
+from haykal.traces import TraceStore
+from haykal.workflows import ApprovalService, RunJournal
+
+root, seed_path, output = map(Path, sys.argv[1:])
+seed = json.loads(seed_path.read_text())
+database = root / "runtime.sqlite3"
+assert ArtifactStore(root / "artifacts").get(seed["artifact_digest"]) == b"p95-4-upgrade-artifact"
+assert TraceStore(database).read(seed["trace_id"])[0].event_type == "run.started"
+journal = RunJournal(database)
+assert journal.get("upgrade-run").status == "completed"
+assert journal.action_status("upgrade-run", "upgrade-action") == "committed"
+ApprovalService(database, signing_secret=b"p95-4-upgrade-secret".ljust(32, b"!"))
+loaded = SkillRegistry(
+    database,
+    root / "skill-objects",
+    trust_policy=TrustPolicy({"p95-4": seed["publisher_public_key"]}),
+).load("upgrade.fixture", "1.0.0")
+assert loaded.metadata.content_digest == seed["skill_digest"]
+with sqlite3.connect(database) as connection:
+    assert connection.execute("PRAGMA quick_check").fetchone()[0] == "ok"
+    tables = {row[0] for row in connection.execute(
+        "SELECT name FROM sqlite_master WHERE type='table'"
+    )}
+required = {
+    "approval_grant",
+    "candidate_patch",
+    "skill_action_checkpoint",
+    "skill_run",
+    "skill_version",
+    "trace_event",
+}
+assert required <= tables
+output.write_text(json.dumps({
+    "schema_version": "1.0",
+    "status": "passed",
+    "required_tables": sorted(required),
+    "table_count": len(tables),
+    "artifact_digest": seed["artifact_digest"],
+    "skill_digest": seed["skill_digest"],
+}, indent=2, sort_keys=True) + "\n")
+PY
 PYTHONPATH= PYTHONNOUSERSITE=1 "$venv/bin/python" - "$bundle" "$temporary" \
   >"$evidence/reports/import-provenance.json" <<'PY'
 import importlib.metadata
@@ -105,7 +216,8 @@ PYTHONPATH= PYTHONNOUSERSITE=1 "$venv/bin/haykal-m3" action-smoke \
 
 reset_app
 PYTHONPATH= PYTHONNOUSERSITE=1 "$venv/bin/python" "$bundle/transport-smoke.py" \
-  --serial "$serial" --adb "$adb" --state-dir "$temporary/transport-state" \
+  --serial "$serial" --adb "$adb" --haykal-bin "$venv/bin/haykal" \
+  --state-dir "$temporary/transport-state" \
   --output "$evidence/reports/transports.json"
 
 run_skill() {
@@ -180,21 +292,41 @@ timeout = read("submit-timeout.json")
 primitive = read("primitive-action.json")
 transports = read("transports.json")
 upgrade = read("upgrade-diagnostics.json")
+upgrade_state = read("upgrade-state-verification.json")
 connected = read("readiness-connected.json")
 absent = read("readiness-absent.json")
 recovered = read("readiness-recovered.json")
 provenance = read("import-provenance.json")
 retention = read("retention-preview.json")
+
+def dispatched(result, suffix):
+    return [
+        event for event in result.get("events", [])
+        if event.get("event_type") == "action.dispatched"
+        and str(event.get("payload", {}).get("action_id", "")).endswith(suffix)
+    ]
+
 assert offers["status"] == "completed" and len(offers["outputs"]["offers"]) == 10
 assert approval["status"] == "approval_required"
 assert stale["status"] == "approval_required" and stale["pending"]["reason"] == "approval_stale"
 assert timeout["status"] == "completed_reconciled"
+assert dispatched(approval, ":review") == []
+assert dispatched(stale, ":review") == []
+timeout_dispatches = dispatched(timeout, ":review")
+assert len(timeout_dispatches) == 1
+timeout_receipt = timeout_dispatches[0]["payload"]["receipt"]
+assert timeout_receipt["dispatch_status"] == "dispatched"
+assert timeout_receipt["repeated_request"] is False
 assert primitive["status"] == "passed"
-assert transports["http"]["readiness"] == "ready" and transports["mcp"]["scene_id"]
+assert transports["http"]["transport"] == "http-socket"
+assert transports["http"]["readiness"] == "ready"
+assert transports["mcp"]["transport"] == "mcp-v2-stdio" and transports["mcp"]["scene_id"]
 assert upgrade["status"] in {"ready", "degraded"}
+assert upgrade_state["status"] == "passed" and upgrade_state["table_count"] >= 6
 assert connected["status"] == "ready" and recovered["status"] == "ready"
 assert absent["status"] == "unhealthy"
 assert provenance["source_checkout_imported"] is False
+assert provenance["distribution_version"] == build["current"]["version"]
 assert build["current"]["worktree_dirty_at_build"] is False
 assert retention["dry_run"] is True
 assert (root / "reports/static-trace/index.html").is_file()
@@ -209,10 +341,12 @@ manifest = {
     "release": {
         "version": build["current"]["version"],
         "commit": build["current"]["commit"],
+        "source_tree": build["current"]["source_tree"],
         "wheel_sha256": build["current"]["sha256"],
         "apk_sha256": build["matjar"]["sha256"],
         "previous_version": build["previous"]["version"],
         "previous_wheel_sha256": build["previous"]["sha256"],
+        "build_manifest_sha256": hashlib.sha256(Path(build_path).read_bytes()).hexdigest(),
     },
     "device": {"serial": serial, "api_level": int(api), "vm_identity": fingerprint},
     "isolation": provenance,

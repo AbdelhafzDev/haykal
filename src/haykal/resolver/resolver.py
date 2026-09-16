@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import dataclass
 
 from haykal.contracts.action import ActionTarget, ResolutionPolicy, ResolvedTarget
@@ -44,6 +46,16 @@ class ResolutionDecision:
 
 
 _ACTION_CAPABILITY = {"tap": "tap", "input_text": "input_text"}
+
+
+def _fingerprint_digest(element: SemanticElement) -> str:
+    encoded = json.dumps(
+        element.fingerprint.model_dump(mode="json"),
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode()
+    return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
 
 
 class TargetResolver:
@@ -91,6 +103,7 @@ class TargetResolver:
                 action_kind=action_kind,
                 policy=policy,
                 source_scene=source_scene,
+                expected_fingerprint=anchor.fingerprint,
             )
         assert target.element_id is not None and target.scene_revision is not None
         return self._resolve_element_id(
@@ -148,14 +161,18 @@ class TargetResolver:
         action_kind: str,
         policy: ResolutionPolicy,
         source_scene: SemanticScene | None,
+        expected_fingerprint: str | None = None,
     ) -> ResolutionDecision:
         index = SceneIndex(scene)
         current = index.by_id.get(element_id)
-        if current is not None and self._supports(current, action_kind):
-            stale = source_revision != scene.revision
+        if (
+            current is not None
+            and source_revision == scene.revision
+            and self._supports(current, action_kind)
+        ):
             return ResolutionDecision(
-                self._resolved(current, 1.0 if not stale else 0.99, scene, stale_rebound=stale),
-                (RankedTarget(current, 1.0 if not stale else 0.99, ("stable_id",)),),
+                self._resolved(current, 1.0, scene, stale_rebound=False),
+                (RankedTarget(current, 1.0, ("stable_id",)),),
             )
         if source_revision == scene.revision:
             raise TargetNotFound(f"element {element_id!r} is absent from current scene")
@@ -164,23 +181,54 @@ class TargetResolver:
         previous = SceneIndex(source_scene).by_id.get(element_id)
         if previous is None:
             raise StaleTarget(f"element {element_id!r} is absent from source scene")
+        previous_fingerprint = _fingerprint_digest(previous)
+        if expected_fingerprint is not None and previous_fingerprint != expected_fingerprint:
+            raise StaleTarget("record anchor fingerprint does not match its source scene")
+        if (
+            current is not None
+            and self._supports(current, action_kind)
+            and _fingerprint_digest(current) == previous_fingerprint
+            and (
+                expected_fingerprint is None
+                or _fingerprint_digest(current) == expected_fingerprint
+            )
+        ):
+            return ResolutionDecision(
+                self._resolved(current, 0.99, scene, stale_rebound=True),
+                (
+                    RankedTarget(
+                        current,
+                        0.99,
+                        ("tracked_id", "exact_semantic_fingerprint"),
+                    ),
+                ),
+            )
         exact_resource = [
             element
             for element in scene.elements
             if previous.resource_id is not None
             and element.resource_id == previous.resource_id
             and self._supports(element, action_kind)
+            and _fingerprint_digest(element) == previous_fingerprint
+            and (
+                expected_fingerprint is None
+                or _fingerprint_digest(element) == expected_fingerprint
+            )
         ]
         if len(exact_resource) == 1:
             matched = exact_resource[0]
             return ResolutionDecision(
                 self._resolved(matched, 0.99, scene, stale_rebound=True),
-                (RankedTarget(matched, 0.99, ("unique_resource_id",)),),
+                (RankedTarget(matched, 0.99, ("unique_resource_and_fingerprint",)),),
             )
         ranked = [
             RankedTarget(element, identity_score(previous, element), ("semantic_fingerprint",))
             for element in scene.elements
             if self._supports(element, action_kind)
+            and (
+                expected_fingerprint is None
+                or _fingerprint_digest(element) == expected_fingerprint
+            )
         ]
         return self._accept(ranked, scene, policy, stale_rebound=True)
 

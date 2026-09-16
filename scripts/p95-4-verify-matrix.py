@@ -9,6 +9,29 @@ import json
 from pathlib import Path
 
 
+def _digest(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _verify_evidence(directory: Path) -> str:
+    checksum_path = directory / "evidence-sha256.txt"
+    if not checksum_path.is_file():
+        raise SystemExit(f"missing evidence checksum manifest: {checksum_path}")
+    covered: set[str] = set()
+    for line in checksum_path.read_text().splitlines():
+        expected, separator, relative = line.partition("  ")
+        candidate = Path(relative)
+        if not separator or candidate.is_absolute() or ".." in candidate.parts:
+            raise SystemExit(f"malformed evidence checksum line: {line!r}")
+        path = directory / candidate
+        if not path.is_file() or _digest(path) != expected:
+            raise SystemExit(f"evidence digest mismatch: {candidate}")
+        covered.add(candidate.as_posix())
+    if "acceptance-manifest.json" not in covered:
+        raise SystemExit("evidence checksum manifest does not cover acceptance-manifest.json")
+    return _digest(checksum_path)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("evidence", type=Path, nargs="+")
@@ -18,23 +41,33 @@ def main() -> int:
     for directory in args.evidence:
         path = directory / "acceptance-manifest.json"
         payload = json.loads(path.read_text())
-        payload["manifest_sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+        payload["manifest_sha256"] = _digest(path)
+        payload["evidence_sha256"] = _verify_evidence(directory)
         manifests.append(payload)
     by_api = {int(item["device"]["api_level"]): item for item in manifests}
-    if set(by_api) != {34, 35}:
+    if len(manifests) != 2 or set(by_api) != {34, 35}:
         raise SystemExit(f"expected API 34 and 35 evidence, got {sorted(by_api)}")
-    digests = {item["release"]["wheel_sha256"] for item in manifests}
-    if len(digests) != 1 or not all(item["status"] == "passed" for item in manifests):
-        raise SystemExit("matrix did not pass with one identical wheel")
+    releases = [item["release"] for item in manifests]
+    if releases[0] != releases[1]:
+        raise SystemExit("matrix evidence does not reference one identical release bundle")
+    if not all(
+        item["status"] == "passed"
+        and all(value == "passed" for value in item.get("checks", {}).values())
+        for item in manifests
+    ):
+        raise SystemExit("matrix did not pass every acceptance check")
+    wheel_digest = str(releases[0]["wheel_sha256"])
     result = {
         "schema_version": "1.0",
         "status": "passed",
         "api_levels": [34, 35],
-        "wheel_sha256": next(iter(digests)),
+        "release": releases[0],
+        "wheel_sha256": wheel_digest,
         "runs": [
             {
                 "api_level": api,
                 "manifest_sha256": by_api[api]["manifest_sha256"],
+                "evidence_sha256": by_api[api]["evidence_sha256"],
                 "vm_identity": by_api[api]["device"]["vm_identity"],
             }
             for api in (34, 35)

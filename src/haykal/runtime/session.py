@@ -6,6 +6,7 @@ import asyncio
 import hashlib
 import json
 import time
+import uuid
 from dataclasses import dataclass
 from typing import Literal
 
@@ -19,8 +20,9 @@ from haykal.contracts import (
     SemanticAction,
     SemanticScene,
 )
-from haykal.contracts.action import ResolutionPolicy
+from haykal.contracts.action import ResolutionPolicy, Risk
 from haykal.contracts.extraction import ExtractedRecord, RecordAnchor
+from haykal.contracts.scene import SemanticElement
 from haykal.contracts.selector import Selector
 from haykal.device import DeviceBackend
 from haykal.execution import ActionRunner
@@ -184,7 +186,13 @@ class RuntimeSession:
         seen: set[str] = set()
         scenes: list[str] = []
         source_exhausted = False
-        container_id: str | None = None
+        initial_container = self._resolver.resolve_selector(
+            request.scroll.within,
+            self._record().scene,
+            action_kind="swipe",
+            policy=self._runner_policy(),
+        )
+        container_id: str | None = initial_container.target.element_id
         started = time.monotonic()
         stop_reason: Literal[
             "end_of_list",
@@ -321,7 +329,6 @@ class RuntimeSession:
         record_anchors: dict[str, RecordAnchor] | None = None,
     ) -> dict[str, object]:
         async with self._lock:
-            await self._relocate_record_anchor(action, record_anchors)
             pre_scene = self._record().scene
             if action.target is None:
                 assessment = self._runner.assess(action, pre_scene, None)
@@ -356,6 +363,24 @@ class RuntimeSession:
                 ],
             }
 
+    async def reveal(
+        self,
+        action: SemanticAction,
+        *,
+        run_id: str,
+        trace_id: str,
+        record_anchors: dict[str, RecordAnchor] | None = None,
+    ) -> bool:
+        """Reveal a record anchor through explicit, audited reversible actions."""
+
+        async with self._lock:
+            return await self._reveal_record_anchor(
+                action,
+                record_anchors,
+                run_id=run_id,
+                trace_id=trace_id,
+            )
+
     async def act(
         self,
         action: SemanticAction,
@@ -366,13 +391,20 @@ class RuntimeSession:
         record_anchors: dict[str, RecordAnchor] | None = None,
     ) -> ActionResult:
         async with self._lock:
-            await self._relocate_record_anchor(action, record_anchors)
+            effective_run_id = run_id or f"run_{uuid.uuid4().hex}"
+            effective_trace_id = trace_id or self._trace_store.new_trace_id()
+            await self._reveal_record_anchor(
+                action,
+                record_anchors,
+                run_id=effective_run_id,
+                trace_id=effective_trace_id,
+            )
             pre_scene = self._record().scene
             return await self._runner.execute(
                 action,
                 pre_scene,
-                run_id=run_id,
-                trace_id=trace_id,
+                run_id=effective_run_id,
+                trace_id=effective_trace_id,
                 source_scene=self._source_scene(action, record_anchors),
                 approval=approval,
                 record_anchors=record_anchors,
@@ -392,17 +424,20 @@ class RuntimeSession:
     def current_scene(self) -> SemanticScene:
         return self._record().scene
 
-    async def _relocate_record_anchor(
+    async def _reveal_record_anchor(
         self,
         action: SemanticAction,
         record_anchors: dict[str, RecordAnchor] | None,
-    ) -> None:
+        *,
+        run_id: str,
+        trace_id: str,
+    ) -> bool:
         target = action.target
         if target is None or target.record_anchor is None:
-            return
+            return True
         anchor = (record_anchors or {}).get(target.record_anchor)
         if anchor is None or anchor.scroll_checkpoint is None:
-            return
+            return False
         source_id = self._revision_index.get(anchor.scene_revision)
         source = self._records.get(source_id) if source_id is not None else None
         previous = (
@@ -410,18 +445,18 @@ class RuntimeSession:
             if source is not None
             else None
         )
-        if previous is None or previous.resource_id is None:
-            return
+        if previous is None or self._element_fingerprint(previous) != anchor.fingerprint:
+            return False
 
         def visible() -> bool:
             return any(
-                item.resource_id == previous.resource_id and item.state.visible
+                self._element_fingerprint(item) == anchor.fingerprint and item.state.visible
                 for item in self._record().scene.elements
             )
 
         if visible():
-            return
-        for _ in range(8):
+            return True
+        for step in range(8):
             scene = self._record().scene
             container = next(
                 (
@@ -432,27 +467,43 @@ class RuntimeSession:
                 None,
             )
             if container is None:
-                container = next(
-                    (item for item in scene.elements if "scroll" in item.actions),
-                    None,
-                )
+                scrollable = [item for item in scene.elements if "scroll" in item.actions]
+                container = scrollable[0] if len(scrollable) == 1 else None
             if container is None:
-                return
+                return False
             before = semantic_content_digest(scene.elements)
-            x = (container.bounds.left + container.bounds.right) // 2
-            height = container.bounds.bottom - container.bounds.top
-            await self._backend.swipe(
-                x,
-                container.bounds.top + round(height * 0.2),
-                x,
-                container.bounds.top + round(height * 0.8),
-                300,
+            reveal_action = SemanticAction(
+                action_id=f"{action.action_id}:reveal:{step + 1}",
+                kind="swipe",
+                direction="down",
+                distance_ratio=0.6,
+                within=Selector(element_id=container.id, scene_revision=scene.revision),
+                risk=Risk(category="navigation", gate="none"),
             )
-            await self._capture_settled(stable_samples=2, interval_ms=100)
+            result = await self._runner.execute(
+                reveal_action,
+                scene,
+                run_id=run_id,
+                trace_id=trace_id,
+            )
+            if result.attempts != 1:
+                return False
             if visible():
-                return
+                return True
             if semantic_content_digest(self._record().scene.elements) == before:
-                return
+                return False
+        return False
+
+    @staticmethod
+    def _element_fingerprint(element: SemanticElement) -> str:
+        fingerprint = element.fingerprint
+        encoded = json.dumps(
+            fingerprint.model_dump(mode="json"),
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+        return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
 
     def _source_scene(
         self,

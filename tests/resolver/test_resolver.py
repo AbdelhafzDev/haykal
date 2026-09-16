@@ -127,6 +127,7 @@ def test_duplicate_targets_abstain_with_ranked_alternatives() -> None:
 
 def test_stale_stable_id_rebinds_but_incompatible_element_fails() -> None:
     resolver = TargetResolver()
+    source = _scene(1, [_element("stable", label="التالي")])
     current = _scene(2, [_element("stable", label="التالي")])
 
     decision = resolver.resolve(
@@ -134,6 +135,7 @@ def test_stale_stable_id_rebinds_but_incompatible_element_fails() -> None:
         current,
         action_kind="tap",
         policy=ResolutionPolicy(),
+        source_scene=source,
     )
     assert decision.target.stale_rebound is True
 
@@ -166,4 +168,18 @@ def test_stale_anchor_prefers_one_exact_resource_across_large_scroll_shift() -> 
 
     assert decision.target.element_id == "new"
     assert decision.target.stale_rebound is True
-    assert decision.ranked[0].reasons == ("unique_resource_id",)
+    assert decision.ranked[0].reasons == ("unique_resource_and_fingerprint",)
+
+
+def test_stale_anchor_rejects_unique_resource_when_semantics_changed() -> None:
+    source = _scene(1, [_element("old", label="عرض البيتزا", resource_id="card_action")])
+    current = _scene(2, [_element("new", label="تأكيد الشراء", resource_id="card_action")])
+
+    with pytest.raises(TargetNotFound):
+        TargetResolver().resolve(
+            ActionTarget(element_id="old", scene_revision=1),
+            current,
+            action_kind="tap",
+            policy=ResolutionPolicy(),
+            source_scene=source,
+        )
