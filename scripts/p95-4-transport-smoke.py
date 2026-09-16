@@ -86,6 +86,7 @@ def _request(
 
 def _http_smoke(serial: str, adb: str, state: Path, haykal_bin: Path) -> dict[str, object]:
     state.mkdir(parents=True, mode=0o700, exist_ok=False)
+    ArtifactStore(state / "artifacts").put(b"p95-4-readiness-probe")
     port = _free_port()
     base_url = f"http://127.0.0.1:{port}"
     command = [
