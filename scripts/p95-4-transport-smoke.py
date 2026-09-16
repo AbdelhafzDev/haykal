@@ -10,9 +10,10 @@ import os
 import socket
 import subprocess
 import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
-import httpx
 from mcp import Client, StdioServerParameters
 
 import haykal
@@ -59,6 +60,30 @@ def _free_port() -> int:
         return int(listener.getsockname()[1])
 
 
+def _request(
+    base_url: str,
+    method: str,
+    path: str,
+    *,
+    headers: dict[str, str] | None = None,
+    payload: dict[str, object] | None = None,
+) -> tuple[int, dict[str, str], dict[str, object]]:
+    data = json.dumps(payload).encode() if payload is not None else None
+    request = urllib.request.Request(
+        base_url + path,
+        data=data,
+        headers={"Content-Type": "application/json", **(headers or {})},
+        method=method,
+    )
+    try:
+        response = urllib.request.urlopen(request, timeout=30)
+    except urllib.error.HTTPError as exc:
+        response = exc
+    with response:
+        body = json.loads(response.read())
+        return int(response.status), dict(response.headers.items()), body
+
+
 def _http_smoke(serial: str, adb: str, state: Path, haykal_bin: Path) -> dict[str, object]:
     state.mkdir(parents=True, mode=0o700, exist_ok=False)
     port = _free_port()
@@ -90,51 +115,62 @@ def _http_smoke(serial: str, adb: str, state: Path, haykal_bin: Path) -> dict[st
             stderr=stderr,
         )
         try:
-            with httpx.Client(base_url=base_url, timeout=30) as client:
-                deadline = time.monotonic() + 60
-                while True:
-                    if process.poll() is not None:
-                        raise RuntimeError(f"HTTP server exited with {process.returncode}")
-                    try:
-                        readiness = client.get("/readyz")
-                        if readiness.status_code == 200:
-                            break
-                    except httpx.TransportError:
-                        pass
-                    if time.monotonic() >= deadline:
-                        raise RuntimeError("HTTP server did not become ready")
-                    time.sleep(0.25)
-                created = client.post(
-                    "/v1/sessions",
-                    json={"device_serial": serial},
-                    headers={**headers, "Idempotency-Key": "wheel-create"},
-                )
-                if created.status_code != 201:
-                    raise RuntimeError(
-                        f"HTTP session creation failed: {created.status_code}"
-                    )
-                session_id = created.json()["session_id"]
-                observed = client.post(
-                    f"/v1/sessions/{session_id}/observe",
-                    json={},
-                    headers={**headers, "Idempotency-Key": "wheel-observe"},
-                )
-                if observed.status_code != 200 or not observed.json().get("scene_id"):
-                    raise RuntimeError(f"HTTP observe failed: {observed.status_code}")
-                replay = client.post(
-                    f"/v1/sessions/{session_id}/observe",
-                    json={},
-                    headers={**headers, "Idempotency-Key": "wheel-observe"},
-                )
-                if replay.headers.get("idempotency-replayed") != "true":
-                    raise RuntimeError("HTTP idempotency replay was not reported")
-                return {
-                    "transport": "http-socket",
-                    "readiness": readiness.json()["status"],
-                    "session_id": session_id,
-                    "scene_id": observed.json()["scene_id"],
-                    "idempotency_replayed": True,
-                }
+            deadline = time.monotonic() + 60
+            while True:
+                if process.poll() is not None:
+                    raise RuntimeError(f"HTTP server exited with {process.returncode}")
+                try:
+                    ready_status, _, readiness = _request(base_url, "GET", "/readyz")
+                    if ready_status == 200:
+                        break
+                except urllib.error.URLError:
+                    pass
+                if time.monotonic() >= deadline:
+                    raise RuntimeError("HTTP server did not become ready")
+                time.sleep(0.25)
+            created_status, _, created = _request(
+                base_url,
+                "POST",
+                "/v1/sessions",
+                headers={**headers, "Idempotency-Key": "wheel-create"},
+                payload={"device_serial": serial},
+            )
+            if created_status != 201:
+                raise RuntimeError(f"HTTP session creation failed: {created_status}")
+            session_id = created["session_id"]
+            observed_status, _, observed = _request(
+                base_url,
+                "POST",
+                f"/v1/sessions/{session_id}/observe",
+                headers={**headers, "Idempotency-Key": "wheel-observe"},
+                payload={},
+            )
+            if observed_status != 200 or not observed.get("scene_id"):
+                raise RuntimeError(f"HTTP observe failed: {observed_status}")
+            _, replay_headers, _ = _request(
+                base_url,
+                "POST",
+                f"/v1/sessions/{session_id}/observe",
+                headers={**headers, "Idempotency-Key": "wheel-observe"},
+                payload={},
+            )
+            replayed = next(
+                (
+                    value
+                    for key, value in replay_headers.items()
+                    if key.casefold() == "idempotency-replayed"
+                ),
+                None,
+            )
+            if replayed != "true":
+                raise RuntimeError("HTTP idempotency replay was not reported")
+            return {
+                "transport": "http-socket",
+                "readiness": readiness["status"],
+                "session_id": session_id,
+                "scene_id": observed["scene_id"],
+                "idempotency_replayed": True,
+            }
         finally:
             process.terminate()
             try:
