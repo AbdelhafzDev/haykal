@@ -47,7 +47,9 @@ states:
   type_query:
     expect: {visible: {semantic_name: search_box}}
     action: {kind: input_text, target: {semantic_name: search_box}, text: "${query}", mode: replace}
-    verify: {text_equals: {target: {semantic_name: search_box}, value: "${query}"}}
+    verify:
+      timeout_ms: 10000
+      text_equals: {target: {semantic_name: search_box}, value: "${query}"}
     next: submit
   submit:
     expect: {visible: {semantic_name: show_results}}

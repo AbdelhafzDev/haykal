@@ -36,7 +36,9 @@ states:
       target: {semantic_name: search_box}
       text: "${query}"
       mode: replace
-    verify: {text_equals: {target: {semantic_name: search_box}, value: "${query}"}}
+    verify:
+      timeout_ms: 10000
+      text_equals: {target: {semantic_name: search_box}, value: "${query}"}
     next: submit
 
   submit:
