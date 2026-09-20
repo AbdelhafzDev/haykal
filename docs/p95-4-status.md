@@ -1,6 +1,6 @@
 # P95.4 status: test the shipped product
 
-Decision: **complete locally; hosted fresh-checkout evidence remains no-go**
+Decision: **superseded by the hosted P95.4R release acceptance; passed**
 
 Commit: `3bcdfdec9a33c084947be65f8ce306fcc942ec17`
 
@@ -34,16 +34,14 @@ Evidence: generated evidence is under ignored `reports/p95-4/`, not in Git.
 - Matjar APK: `sha256:6f79e3fba002875a8eaf804e682d960e8a98fbedae41292b8246c17abaca91ff`
 - previous 0.0.1 wheel: `sha256:9132be7e50de198c2128eb657425317b206757b4ff7a4abc9481ce088b61de15`
 
-Open findings:
+This `0.0.2` record is retained as the original local P95.4 evidence. Release
+`0.0.3` subsequently passed the same build-once workflow from a hosted fresh
+checkout on API 34 and API 35, including the same-wheel attestation. The current
+decision, cryptographic identities, artifact IDs, and run URL are recorded in
+the [P95.4R remediation status](p95-4r-status.md).
 
-- high — repository has no configured remote, so hosted CI cannot yet provide a
-  run URL or fresh-checkout attestation;
-- medium — the evidence is local rather than a downloadable hosted artifact;
-  publish it through the configured workflow after adding a remote.
-
-Score after evidence: **89/100 official, 91/100 conditional** on the unchanged
-workflow passing from a hosted fresh checkout. The local API 34/35 matrix earns
-the P95.4 product evidence; the missing hosted provenance is not silently counted.
+Score after hosted P95.4R evidence: **91/100**. P95.5 external and elapsed-time
+proof is the remaining gate to 95.
 
 ## Implemented acceptance boundary
 

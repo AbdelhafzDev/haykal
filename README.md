@@ -39,15 +39,16 @@ The P95.4 review reduced the defensible implementation score to 85/100 after
 finding release-boundary defects in record relocation, stale rebinding, build
 provenance, and acceptance assertions. Focused P95.4R remediation produced release
 `0.0.3`, and the same immutable wheel/APK bundle passed clean wheel-only acceptance
-on API 34 and API 35. The defensible implementation score is now **90/100**. The
-release decision remains no-go until the same workflow passes from a hosted fresh
-checkout; this repository does not yet have a configured remote.
+on hosted API 34 and API 35 runners from a fresh checkout. The hosted build-once
+matrix and same-wheel attestation are green, so the defensible implementation
+score is now **91/100**. P95.5 external and elapsed-time evidence remains the gate
+to 95/100.
 Follow the phased
 [Path to 95](docs/plan/10-path-to-95.md), the
 [P95.1 safety/privacy record](docs/p95-1-status.md), the
 [P95.2 reliability/readiness record](docs/p95-2-status.md), and the
 [P95.3 benchmark record](docs/p95-3-status.md). P95.4R shipped-wheel acceptance
-has passed its local clean API 34/35 matrix; see the
+has passed its hosted clean API 34/35 matrix; see the
 [P95.4 status](docs/p95-4-status.md) and
 [P95.4R remediation status](docs/p95-4r-status.md), plus the
 [runbook](docs/p95-4-runbook.md). This implementation score is

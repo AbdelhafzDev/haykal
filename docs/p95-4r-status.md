@@ -1,13 +1,11 @@
 # P95.4R status: focused release-gate remediation
 
-Decision: **local release acceptance passed; hosted release provenance pending**
+Decision: **passed in hosted CI; proceed to P95.5**
 
 Release target: `0.0.3`
 
-Defensible implementation score after P95.4R: **90/100 locally**. A hosted
-fresh-checkout run of the same release would raise the release evidence to the
-forecast **91/100**. It does not by itself earn the remaining external-evidence
-points required for 95.
+Defensible implementation score after hosted P95.4R acceptance: **91/100**. This
+does not by itself earn the remaining external-evidence points required for 95.
 
 P95.4R closes the release-review findings without expanding product scope:
 
@@ -40,13 +38,13 @@ One clean commit produced one immutable release bundle:
 | Field | Value |
 | --- | --- |
 | Version | `0.0.3` |
-| Commit | `98beea89218ced122ecc6cf4f00487bbb51de2cc` |
-| Source tree | `66503e5689aa8f89aa574657f7095cc62e26222c` |
-| Wheel SHA-256 | `e89d7fc0875befcbfc7ebdf3337e64b303afb02b7b05005a6f9dedc3ab9ebdb2` |
-| APK SHA-256 | `438d09b82db6d4c738a3a875b5bdd595c0ee7d500e8e439e5321848e75b4166a` |
-| Build manifest SHA-256 | `7c8aa9bd819c25c8b7153784da8228f9d9564fd41ae507e8872bc6d9635f078a` |
+| Commit | `883937b9969802694a27a39261b850c075aa5467` |
+| Source tree | `2ced8d6fb3460b84b2b381f46bb65f320b376d57` |
+| Wheel SHA-256 | `b01ce357d5c5be1142b8aca427b63843f4d08ad8ee5d4de21dd29e00d169c200` |
+| APK SHA-256 | `e046bda3be2b5ff7905553ce495fdea1c110084ba2f0179dba8dbae84c29a82e` |
+| Build manifest SHA-256 | `818610a1903cdd921da58573115fff701e7e24717d38116dd03efac07af3d84d` |
 | Previous release | `0.0.2` |
-| Previous wheel SHA-256 | `a9228d13f07bbc925659d141e91d31ac32859bf6fb2d186c10607ebbde326cb7` |
+| Previous wheel SHA-256 | `0841206d6b84fefb4c3e65ff3accd830f13d873a3863aff58fc2a03fb2179cad` |
 
 ## Clean-device acceptance
 
@@ -55,32 +53,44 @@ supported Android versions:
 
 | VM | Result | Acceptance manifest SHA-256 | Evidence index SHA-256 |
 | --- | --- | --- | --- |
-| API 34, Android 14 | Passed | `f7ffd6d0112bdd2e8fef1d264abbe37df287a816f5a421adb061ddff5a097d2e` | `a03b4fe707090ce473daabfd38ea8bddf352e873b8c8521c72ee15c07c1e72ed` |
-| API 35, Android 15 | Passed | `a7e684e9125ba845bed3ec83bb09663117ee8ecda27081913c66f89a06ae363d` | `3acd8192cb06b037267b6959bca6991bb5d587c708c5230822765cad35ef2b8a` |
+| API 34, Android 14 | Passed | `a3135fec5c7a17dfd71373228d31acc79ce210d892e788456b72708ac54987c4` | `1f06ca88a4054d4fcb4d5833cb4bf4fb6021027e21e2fe8b97af65b13d1830ca` |
+| API 35, Android 15 | Passed | `4958be83b4875e691c50017ecd123d716d0fe1420e450bfe77839024154eccb9` | `ebf77fdedc0456fa68b5c96a1c8bfb9594f468e6c0efce2d5dc0186e83d3e754` |
 
 The same-release attestation passed with SHA-256
-`adbd60104e6a55d1ea0f2c0c45c97e45f229a7683949a61b9018c4b63f4cffca`.
+`75ce9e7a0ff3bf04fc52b8122b6bcb4ce9661da0eb495d2aeb5ff27244c44d13`.
 Each device passed Arabic input and offers, primitive action, approval stop,
 stale approval rejection, submit-timeout reconciliation, HTTP, MCP, trace export,
 retention preview, backup/restore, device-aware readiness, and upgrade/schema
 compatibility.
 
-The acceptance run exposed and fixed four release-boundary defects before the
-final pass: an incomplete upgrade fixture, a development-only transport-smoke
-dependency, uninitialized HTTP readiness artifacts, and focus loss while enabling
-the Unicode input method. The final Arabic typing path enables the IME without an
-empty text injection and gives cold-device verification its own bounded budget.
+The local and hosted acceptance runs exposed and fixed release-boundary defects
+before the final pass: an incomplete upgrade fixture, a development-only
+transport-smoke dependency, uninitialized HTTP readiness artifacts, cold
+navigation verification budgets, Android 15 focus loss while enabling the
+Unicode input method, an incorrectly shared command timeout for cold Unicode
+input, cold Compose scene readiness, and a fallback-skew check that rejected
+accessibility-only observations even when no OCR or vision adapter was present.
 
-Generated evidence is retained locally under `reports/p95-4r/` and deliberately
-ignored by Git because the bundle and device artifacts total about 48 MB. The
-small status record carries their cryptographic identities; the release verifier
-validates the complete local evidence indexes.
+Hosted run: [GitHub Actions run 35501344891](https://github.com/AbdelhafzDev/haykal/actions/runs/35501344891),
+completed successfully in 13m17s from a fresh checkout. It published four
+downloadable artifacts with 14-day retention:
+
+| Artifact | GitHub artifact ID | Archive SHA-256 |
+| --- | ---: | --- |
+| `p95-4-release-bundle` | `10602661162` | `009e041377e1e82c6dccb362bf87a6ba7d218b520ac5661f92ed71580c4bef14` |
+| `p95-4-api-34` | `10602577828` | `801d975a3370c07c39ee5c2e1abc523a814271284995565b3603ace1795b2c65` |
+| `p95-4-api-35` | `10602556830` | `53f474ea42b02631793645bd42867700f4d54129e6df8ee387d89b4192e9dacc` |
+| `p95-4-same-wheel-attestation` | `10601889155` | `20d077b388e6221a09f972b0c2221db20caae72123ab418096ff7dd735170f94` |
+
+The downloaded release `SHA256SUMS` and both device `evidence-sha256.txt`
+indexes were independently rechecked after the hosted run; every entry passed.
+The attestation binds the two VM fingerprints to the same commit, source tree,
+wheel, APK, previous wheel, and build manifest.
 
 ## Remaining gate
 
-The prior `0.0.2` API 34/35 evidence remains historical and does not count for
-this release candidate. Local P95.4R is complete. The overall release decision
-remains **no-go** only for hosted provenance: `git remote -v` is empty, so a
-fresh-checkout hosted CI run and downloadable hosted artifacts cannot yet be
-produced. After a remote is configured, run the same release workflow in hosted
-CI and retain its run URL and artifacts before changing the release decision.
+P95.4 is complete. P95.5 is the remaining path to a defensible 95/100: a real
+eight-hour release-wheel soak, an external competitor run through the independent
+oracle, authorized regional-app validation, a non-core author exercise, and the
+OCR/vision licensing and Arabic-accuracy decision. These external and elapsed-time
+gates remain no-go until their evidence exists.
