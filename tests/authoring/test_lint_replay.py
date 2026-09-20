@@ -77,5 +77,7 @@ def test_matjar_skills_budget_for_cold_navigation_observation(name: str) -> None
     )
 
     verification = payload["states"]["open_search"]["verify"]
+    text_verification = payload["states"]["type_query"]["verify"]
 
     assert verification["timeout_ms"] >= 20_000
+    assert text_verification["timeout_ms"] >= 30_000

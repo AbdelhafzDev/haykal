@@ -86,6 +86,15 @@ async def test_backend_operations_and_ime_restore() -> None:
     assert ("send_keys", "بيتزا", False) in client.calls
     assert ("send_keys", "", False) not in client.calls
     assert ("shell", "am", "broadcast", "-a", "ADB_KEYBOARD_CLEAR_TEXT") in client.calls
+    focus_clicks = [
+        index for index, call in enumerate(client.calls) if call == ("click", 1, 2)
+    ]
+    ime_index = client.calls.index(("set_input_ime", True))
+    clear_index = client.calls.index(
+        ("shell", "am", "broadcast", "-a", "ADB_KEYBOARD_CLEAR_TEXT")
+    )
+    assert len(focus_clicks) == 2
+    assert ime_index < focus_clicks[1] < clear_index
 
 
 @pytest.mark.asyncio

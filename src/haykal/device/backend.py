@@ -128,6 +128,7 @@ class Uiautomator2Backend:
         self._client: UiautomatorClient | None = None
         self._lock = asyncio.Lock()
         self._prior_ime: str | None = None
+        self._last_tap: tuple[int, int] | None = None
         if irreversible_database is not None:
             self._irreversible_dispatcher = AtMostOnceDispatcher(
                 irreversible_database,
@@ -226,6 +227,7 @@ class Uiautomator2Backend:
 
     async def tap(self, x: int, y: int) -> None:
         await self._serialized(lambda client: client.click(x, y))
+        self._last_tap = (x, y)
 
     async def swipe(self, x1: int, y1: int, x2: int, y2: int, duration_ms: int) -> None:
         await self._serialized(
@@ -233,7 +235,10 @@ class Uiautomator2Backend:
         )
 
     async def type_text(self, text: str, *, replace: bool) -> None:
-        await self._serialized(lambda client: self._type_text(client, text, replace=replace))
+        try:
+            await self._serialized(lambda client: self._type_text(client, text, replace=replace))
+        finally:
+            self._last_tap = None
 
     async def press(self, key: str) -> None:
         await self._serialized(lambda client: client.press(key))
@@ -329,6 +334,11 @@ class Uiautomator2Backend:
             # without sending an empty value, which would hide it and can drop
             # focus before the real UTF-8 broadcast.
             client.set_input_ime()
+            # Switching the IME can invalidate the editor token on a cold
+            # Android 15 device. Restore the focus selected immediately before
+            # this input action before clearing or broadcasting UTF-8 text.
+            if self._last_tap is not None:
+                client.click(*self._last_tap)
             client.shell(["am", "broadcast", "-a", "ADB_KEYBOARD_CLEAR_TEXT"])
         client.send_keys(text, clear=False)
 
