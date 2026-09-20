@@ -141,6 +141,27 @@ async def test_backend_timeout_is_bounded() -> None:
 
 
 @pytest.mark.asyncio
+async def test_text_input_has_a_separate_cold_ime_deadline() -> None:
+    client = FakeClient()
+
+    def cold_send_keys(text: str, *, clear: bool) -> None:
+        time.sleep(0.03)
+        client.calls.append(("send_keys", text, clear))
+
+    client.send_keys = cold_send_keys  # type: ignore[method-assign]
+    backend = Uiautomator2Backend(
+        lambda: client,
+        operation_timeout_s=0.01,
+        input_timeout_s=0.1,
+    )
+    await backend.open()
+
+    await backend.type_text("بيتزا", replace=True)
+
+    assert ("send_keys", "بيتزا", False) in client.calls
+
+
+@pytest.mark.asyncio
 async def test_irreversible_dispatch_fails_closed_without_audited_transport() -> None:
     client = FakeClient()
     backend = Uiautomator2Backend(lambda: client)

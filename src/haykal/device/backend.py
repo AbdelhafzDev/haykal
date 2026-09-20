@@ -111,6 +111,7 @@ class Uiautomator2Backend:
         client_factory: Callable[[], UiautomatorClient],
         *,
         operation_timeout_s: float = 10.0,
+        input_timeout_s: float = 30.0,
         restart: Callable[[UiautomatorClient], None] | None = None,
         irreversible_dispatcher: AtMostOnceDispatcher | None = None,
         irreversible_database: str | Path | None = None,
@@ -119,6 +120,7 @@ class Uiautomator2Backend:
     ) -> None:
         self._client_factory = client_factory
         self._timeout = operation_timeout_s
+        self._input_timeout = input_timeout_s
         self._restart = restart
         if irreversible_dispatcher is not None and irreversible_database is not None:
             raise ValueError("provide an irreversible dispatcher or database, not both")
@@ -141,6 +143,7 @@ class Uiautomator2Backend:
         serial: str,
         *,
         operation_timeout_s: float = 10.0,
+        input_timeout_s: float = 30.0,
         irreversible_dispatcher: AtMostOnceDispatcher | None = None,
         irreversible_database: str | Path | None = None,
         lease: DeviceLease | None = None,
@@ -159,6 +162,7 @@ class Uiautomator2Backend:
         return cls(
             factory,
             operation_timeout_s=operation_timeout_s,
+            input_timeout_s=input_timeout_s,
             restart=restart,
             irreversible_dispatcher=irreversible_dispatcher,
             irreversible_database=irreversible_database,
@@ -236,7 +240,11 @@ class Uiautomator2Backend:
 
     async def type_text(self, text: str, *, replace: bool) -> None:
         try:
-            await self._serialized(lambda client: self._type_text(client, text, replace=replace))
+            async with self._lock:
+                await self._call(
+                    lambda client: self._type_text(client, text, replace=replace),
+                    timeout_s=self._input_timeout,
+                )
         finally:
             self._last_tap = None
 
@@ -260,10 +268,15 @@ class Uiautomator2Backend:
         async with self._lock:
             return await self._call(operation)
 
-    async def _call(self, operation: Callable[[UiautomatorClient], T]) -> T:
+    async def _call(
+        self,
+        operation: Callable[[UiautomatorClient], T],
+        *,
+        timeout_s: float | None = None,
+    ) -> T:
         client = self._require_client()
         try:
-            return await self._bounded(lambda: operation(client))
+            return await self._bounded(lambda: operation(client), timeout_s=timeout_s)
         except DeviceBackendTimeout:
             raise
         except Exception as first_error:
@@ -272,15 +285,21 @@ class Uiautomator2Backend:
                 raise DeviceBackendUnavailable(str(first_error)) from first_error
             try:
                 await self._bounded(lambda: restart(client))
-                return await self._bounded(lambda: operation(client))
+                return await self._bounded(lambda: operation(client), timeout_s=timeout_s)
             except Exception as recovery_error:
                 raise DeviceBackendUnavailable(str(recovery_error)) from recovery_error
 
-    async def _bounded(self, operation: Callable[[], T]) -> T:
+    async def _bounded(
+        self,
+        operation: Callable[[], T],
+        *,
+        timeout_s: float | None = None,
+    ) -> T:
+        deadline = self._timeout if timeout_s is None else timeout_s
         try:
-            return await asyncio.wait_for(asyncio.to_thread(operation), timeout=self._timeout)
+            return await asyncio.wait_for(asyncio.to_thread(operation), timeout=deadline)
         except TimeoutError as exc:
-            raise DeviceBackendTimeout(f"operation exceeded {self._timeout:.3f}s") from exc
+            raise DeviceBackendTimeout(f"operation exceeded {deadline:.3f}s") from exc
 
     def _require_client(self) -> UiautomatorClient:
         if self._client is None:
