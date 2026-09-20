@@ -92,7 +92,8 @@ ANDROID_SERIAL=emulator-5554 \
 ```
 
 This builds, installs, resets, and probes both reference apps, then resolves and
-taps `Android View baseline`, waits for two stable scenes, verifies `حفظ`, and
+taps the stable `search_button` accessibility resource, waits for two stable scenes,
+verifies `اعرض النتائج`, and
 checks the six-event trace.
 
 ## Comparative harness

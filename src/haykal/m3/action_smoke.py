@@ -9,7 +9,7 @@ from pathlib import Path
 from haykal.contracts.action import ActionTarget, Risk, SemanticAction
 from haykal.contracts.common import SettlePolicy
 from haykal.contracts.expectation import Expectation
-from haykal.contracts.selector import Selector, TextMatch
+from haykal.contracts.selector import ResourceMatch, Selector
 from haykal.runtime import build_runtime
 
 
@@ -33,10 +33,12 @@ async def run_action_smoke(
             kind="tap",
             target=ActionTarget(
                 scene_revision=pre.revision,
-                selector=Selector(text=TextMatch(contains="Android View baseline")),
+                selector=Selector(
+                    resource_id=ResourceMatch(ends_with="/search_button"),
+                ),
             ),
             expect=Expectation(
-                text_contains="حفظ",
+                text_contains="اعرض النتائج",
                 # Two coherent UIAutomator2 hierarchy+screenshot captures can take
                 # more than five seconds on the ARM64 API 37 reference VM.
                 timeout_ms=30_000,
