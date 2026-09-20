@@ -13,6 +13,29 @@ from haykal.contracts.selector import ResourceMatch, Selector
 from haykal.runtime import build_runtime
 
 
+def build_smoke_action(scene_revision: int) -> SemanticAction:
+    """Build the deterministic primitive exercised by shipped-wheel acceptance."""
+
+    return SemanticAction(
+        action_id=f"act_{uuid.uuid4().hex}",
+        kind="tap",
+        target=ActionTarget(
+            scene_revision=scene_revision,
+            selector=Selector(
+                resource_id=ResourceMatch(ends_with="search_button"),
+            ),
+        ),
+        expect=Expectation(
+            text_contains="اعرض النتائج",
+            # Two coherent UIAutomator2 hierarchy+screenshot captures can take
+            # more than five seconds on the ARM64 API 37 reference VM.
+            timeout_ms=30_000,
+            settle=SettlePolicy(stable_samples=2, interval_ms=100),
+        ),
+        risk=Risk(category="navigation", gate="none"),
+    )
+
+
 async def run_action_smoke(
     *,
     serial: str,
@@ -28,24 +51,7 @@ async def run_action_smoke(
     await session.open()
     try:
         pre = await session.observe()
-        action = SemanticAction(
-            action_id=f"act_{uuid.uuid4().hex}",
-            kind="tap",
-            target=ActionTarget(
-                scene_revision=pre.revision,
-                selector=Selector(
-                    resource_id=ResourceMatch(ends_with="/search_button"),
-                ),
-            ),
-            expect=Expectation(
-                text_contains="اعرض النتائج",
-                # Two coherent UIAutomator2 hierarchy+screenshot captures can take
-                # more than five seconds on the ARM64 API 37 reference VM.
-                timeout_ms=30_000,
-                settle=SettlePolicy(stable_samples=2, interval_ms=100),
-            ),
-            risk=Risk(category="navigation", gate="none"),
-        )
+        action = build_smoke_action(pre.revision)
         resolution = await session.resolve(action)
         result = await session.act(action, run_id="m3-live-smoke")
         trace = session.trace(result.trace_id)
