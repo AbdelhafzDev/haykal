@@ -121,9 +121,32 @@ async def test_fallback_rejects_incoherent_capture(tmp_path: Path) -> None:
     hierarchy = b"<hierarchy/>"
     observation = _observation(store, hierarchy, b"png", skew_ms=501)
 
+    ocr = StaticPerceptionAdapter(
+        "ocr",
+        AdapterIdentity(name="fixture-ocr", version="1", model_digest=DIGEST),
+        [],
+    )
+
     with pytest.raises(ObservationIncoherent, match="capture skew"):
-        await SceneBuilder(store).build(
+        await SceneBuilder(store, ocr=ocr).build(
             observation,
             hierarchy_xml=hierarchy,
             screenshot_png=b"png",
         )
+
+
+@pytest.mark.asyncio
+async def test_incoherent_screenshot_is_not_fused_without_an_adapter(tmp_path: Path) -> None:
+    store = ArtifactStore(tmp_path / "artifacts")
+    hierarchy = b"<hierarchy/>"
+    observation = _observation(store, hierarchy, b"png", skew_ms=501)
+
+    result = await SceneBuilder(store).build(
+        observation,
+        hierarchy_xml=hierarchy,
+        screenshot_png=b"png",
+    )
+
+    assert result.scene.quality.fallbacks_used == []
+    assert "ocr_unavailable" in result.warnings
+    assert "vision_unavailable" in result.warnings

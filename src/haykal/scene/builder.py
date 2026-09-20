@@ -81,7 +81,10 @@ class SceneBuilder:
         candidates = list(accessibility)
         evidence_artifacts: list[str] = []
         warnings = [*observation.warnings, *report.warnings]
-        if report.required_fallbacks and observation.capture_skew_ms > self._max_fallback_skew_ms:
+        available_fallbacks = tuple(
+            source for source in report.required_fallbacks if source in self._adapters
+        )
+        if available_fallbacks and observation.capture_skew_ms > self._max_fallback_skew_ms:
             raise ObservationIncoherent(
                 f"capture skew {observation.capture_skew_ms} ms exceeds "
                 f"fallback limit {self._max_fallback_skew_ms} ms"

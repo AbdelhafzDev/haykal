@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import tempfile
+import time
 import uuid
 from pathlib import Path
 
@@ -10,6 +12,7 @@ from haykal.contracts.action import ActionTarget, Risk, SemanticAction
 from haykal.contracts.common import SettlePolicy
 from haykal.contracts.expectation import Expectation
 from haykal.contracts.selector import ResourceMatch, Selector
+from haykal.resolver import TargetResolutionError
 from haykal.runtime import build_runtime
 
 
@@ -50,9 +53,17 @@ async def run_action_smoke(
     )
     await session.open()
     try:
-        pre = await session.observe()
-        action = build_smoke_action(pre.revision)
-        resolution = await session.resolve(action)
+        deadline = time.monotonic() + 30
+        while True:
+            pre = await session.observe()
+            action = build_smoke_action(pre.revision)
+            try:
+                resolution = await session.resolve(action)
+                break
+            except TargetResolutionError:
+                if time.monotonic() >= deadline:
+                    raise
+                await asyncio.sleep(0.25)
         result = await session.act(action, run_id="m3-live-smoke")
         trace = session.trace(result.trace_id)
         return {
