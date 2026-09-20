@@ -42,7 +42,9 @@ states:
   open_search:
     expect: {visible: {semantic_name: search_button}}
     action: {kind: tap, target: {semantic_name: search_button}}
-    verify: {visible: {semantic_name: search_box}}
+    verify:
+      timeout_ms: 20000
+      visible: {semantic_name: search_box}
     next: type_query
   type_query:
     expect: {visible: {semantic_name: search_box}}

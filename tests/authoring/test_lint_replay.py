@@ -68,3 +68,14 @@ def test_phase4_matjar_reference_skills_are_lint_clean(name: str) -> None:
     skill, issues = lint_skill(payload)
     assert skill is not None
     assert issues == []
+
+
+@pytest.mark.parametrize("name", ["offers.yaml", "prepare-order.yaml"])
+def test_matjar_skills_budget_for_cold_navigation_observation(name: str) -> None:
+    payload = yaml.safe_load(
+        (ROOT / "skills/dev.haykal.refapps.matjar" / name).read_text(encoding="utf-8")
+    )
+
+    verification = payload["states"]["open_search"]["verify"]
+
+    assert verification["timeout_ms"] >= 20_000
