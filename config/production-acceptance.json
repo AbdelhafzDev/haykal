@@ -1,0 +1,106 @@
+{
+  "schema_version": "1.0",
+  "manifest_id": "haykal-production-baseline-0.0.3",
+  "created_at": "2026-10-22T00:00:00+03:00",
+  "release": {
+    "version": "0.0.3",
+    "commit": "883937b9969802694a27a39261b850c075aa5467",
+    "source_tree": "2ced8d6fb3460b84b2b381f46bb65f320b376d57",
+    "wheel_sha256": "sha256:b01ce357d5c5be1142b8aca427b63843f4d08ad8ee5d4de21dd29e00d169c200",
+    "apk_sha256": "sha256:e046bda3be2b5ff7905553ce495fdea1c110084ba2f0179dba8dbae84c29a82e",
+    "build_manifest_sha256": "sha256:818610a1903cdd921da58573115fff701e7e24717d38116dd03efac07af3d84d",
+    "hosted_run_uri": "https://github.com/AbdelhafzDev/haykal/actions/runs/35501344891"
+  },
+  "deployment": {
+    "tenancy": "single_tenant",
+    "device_count": 1,
+    "executor": "uiautomator2",
+    "host": {
+      "operating_system": "Ubuntu 24.04 LTS",
+      "architecture": "x86_64",
+      "python": "3.13.15",
+      "minimum_vcpus": 8,
+      "minimum_memory_bytes": 34359738368,
+      "minimum_encrypted_disk_bytes": 107374182400
+    },
+    "android_images": [
+      {
+        "role": "reference",
+        "api_level": 35,
+        "target": "google_apis",
+        "architecture": "x86_64",
+        "profile": "pixel_6",
+        "fingerprint": "google/sdk_gphone64_x86_64/emu64xa:15/AE3A.240806.043/12960925:userdebug/dev-keys"
+      },
+      {
+        "role": "compatibility",
+        "api_level": 34,
+        "target": "google_apis",
+        "architecture": "x86_64",
+        "profile": "pixel_6",
+        "fingerprint": "google/sdk_gphone64_x86_64/emu64xa:14/UE1A.230829.050/12077443:userdebug/dev-keys"
+      }
+    ]
+  },
+  "operational_limits": {
+    "minimum_free_disk_bytes": 5368709120,
+    "trace_retention_days": 7,
+    "artifact_retention_days": 7,
+    "request_timeout_seconds": 120,
+    "lease_duration_seconds": 300,
+    "maximum_recovery_seconds": 60,
+    "maximum_core_rss_bytes": 536870912,
+    "maximum_model_rss_bytes": 8589934592,
+    "maximum_state_bytes": 1073741824,
+    "maximum_open_descriptors": 256,
+    "maximum_core_p95_milliseconds": 1000,
+    "maximum_fallback_p95_milliseconds": 3000,
+    "maximum_state_growth_bytes_per_second": 262144,
+    "maximum_rss_growth_bytes_per_second": 65536
+  },
+  "perception": {
+    "primary": "accessibility",
+    "fallback": "none",
+    "model_artifacts": [],
+    "offline_cache_required": true,
+    "network_download_allowed": false
+  },
+  "production_gates": {
+    "hosted_p95_4": {
+      "status": "passed",
+      "summary": "One wheel passed the hosted clean API 34/35 matrix and same-wheel attestation.",
+      "evidence_sha256": "sha256:75ce9e7a0ff3bf04fc52b8122b6bcb4ce9661da0eb495d2aeb5ff27244c44d13",
+      "evidence_uri": "https://github.com/AbdelhafzDev/haykal/actions/runs/35501344891"
+    },
+    "omniparser_fallback": {
+      "status": "pending",
+      "summary": "PR.1 must pin and evaluate the MIT OmniParser V2 detector and captioner."
+    },
+    "eight_hour_soak": {
+      "status": "pending",
+      "summary": "PR.2 must complete the 28,800-second fault soak on the promoted wheel."
+    },
+    "regional_apps": {
+      "status": "pending",
+      "summary": "PR.3 requires two authorized regional apps with 30 runs per workflow."
+    },
+    "deployment_drill": {
+      "status": "pending",
+      "summary": "PR.4 must prove clean install, backup, restore, upgrade, and rollback."
+    },
+    "security_review": {
+      "status": "pending",
+      "summary": "Final review follows model selection and the reference deployment drill."
+    }
+  },
+  "score_gates": {
+    "non_core_author": {
+      "status": "pending",
+      "summary": "A non-core engineer must complete and replay the bounded authoring exercise."
+    },
+    "external_benchmark": {
+      "status": "pending",
+      "summary": "A pinned external competitor must run through the independent Matjar oracle."
+    }
+  }
+}

@@ -44,6 +44,9 @@ matrix and same-wheel attestation are green, so the defensible implementation
 score is now **91/100**. P95.5 external and elapsed-time evidence remains the gate
 to 95/100. The lean execution sequence is defined in the
 [production-ready MVP plan](docs/plan/11-production-ready-mvp.md).
+PR.0 has frozen the machine-verifiable production contract; see the
+[PR.0 status](docs/pr0-status.md) and
+[`production-acceptance.json`](config/production-acceptance.json).
 Follow the phased
 [Path to 95](docs/plan/10-path-to-95.md), the
 [P95.1 safety/privacy record](docs/p95-1-status.md), the
