@@ -15,7 +15,10 @@ faults=(
 )
 
 cd "$matjar_dir"
-./gradlew --no-daemon :app:assembleDebug
+if [[ "${HAYKAL_REFAPPS_PREBUILT:-0}" != "1" ]]; then
+  ./gradlew --no-daemon :app:assembleDebug
+fi
+test -s app/build/outputs/apk/debug/app-debug.apk
 "$adb" -s "$serial" install -r app/build/outputs/apk/debug/app-debug.apk
 "$adb" -s "$serial" shell am start -W \
   -n dev.haykal.refapps.matjar/.MainActivity >/dev/null

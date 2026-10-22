@@ -12,10 +12,13 @@ package="dev.haykal.refapps.flutter_sparse"
 faults=(arabic_indic_digits slow_settle duplicate_labels)
 
 cd "$app_dir"
-"$flutter_bin" pub get
-"$flutter_bin" analyze
-"$flutter_bin" test
-ANDROID_HOME="$ANDROID_SDK_ROOT" "$flutter_bin" build apk --debug
+if [[ "${HAYKAL_REFAPPS_PREBUILT:-0}" != "1" ]]; then
+  "$flutter_bin" pub get
+  "$flutter_bin" analyze
+  "$flutter_bin" test
+  ANDROID_HOME="$ANDROID_SDK_ROOT" "$flutter_bin" build apk --debug
+fi
+test -s build/app/outputs/flutter-apk/app-debug.apk
 "$adb" -s "$serial" install -r build/app/outputs/flutter-apk/app-debug.apk
 "$adb" -s "$serial" shell am start -W -n "$package/.MainActivity" >/dev/null
 "$adb" -s "$serial" shell am broadcast \

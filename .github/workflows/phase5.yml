@@ -46,6 +46,10 @@ jobs:
           distribution: temurin
           java-version: "17"
       - run: uv sync --extra dev --locked
+      - name: Build Matjar before starting the emulator
+        run: >-
+          ANDROID_HOME="$ANDROID_HOME"
+          ./refapps/matjar/gradlew --no-daemon -p refapps/matjar test assembleDebug
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
@@ -58,8 +62,10 @@ jobs:
           arch: x86_64
           profile: pixel_6
           target: google_apis
+          disk-size: 4G
           disable-animations: true
           script: >-
             ANDROID_SDK_ROOT="$ANDROID_HOME"
             ANDROID_SERIAL=emulator-5554
+            HAYKAL_REFAPPS_PREBUILT=1
             ./scripts/phase5-reference-check.sh

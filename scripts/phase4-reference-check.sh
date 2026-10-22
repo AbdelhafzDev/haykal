@@ -8,8 +8,12 @@ serial="${ANDROID_SERIAL:-emulator-5554}"
 adb="$ANDROID_SDK_ROOT/platform-tools/adb"
 report_dir="$project_dir/reports/m4"
 
-ANDROID_HOME="$ANDROID_SDK_ROOT" \
-  "$project_dir/refapps/matjar/gradlew" -p "$project_dir/refapps/matjar" test assembleDebug
+if [[ "${HAYKAL_REFAPPS_PREBUILT:-0}" != "1" ]]; then
+  ANDROID_HOME="$ANDROID_SDK_ROOT" \
+    "$project_dir/refapps/matjar/gradlew" --no-daemon \
+    -p "$project_dir/refapps/matjar" test assembleDebug
+fi
+test -s "$project_dir/refapps/matjar/app/build/outputs/apk/debug/app-debug.apk"
 "$adb" -s "$serial" install -r \
   "$project_dir/refapps/matjar/app/build/outputs/apk/debug/app-debug.apk" >/dev/null
 
@@ -63,7 +67,7 @@ from pathlib import Path
 offers = json.loads(Path("reports/m4/offers.json").read_text())
 order = json.loads(Path("reports/m4/prepare-order.json").read_text())
 reconciled = json.loads(Path("reports/m4/prepare-order-reconciled.json").read_text())
-assert offers["status"] == "completed"
+assert offers["status"] == "completed", offers
 assert len(offers["outputs"]["offers"]) == 10
 assert offers["events"][-1]["event_type"] == "run.completed"
 assert order["status"] == "approval_required"

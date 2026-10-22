@@ -71,6 +71,7 @@ jobs:
           arch: x86_64
           profile: pixel_6
           target: google_apis
+          disk-size: 4G
           disable-animations: true
           script: >-
             ANDROID_SDK_ROOT="$ANDROID_HOME"

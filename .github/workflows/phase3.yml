@@ -47,6 +47,11 @@ jobs:
           flutter-version: "3.47.4"
           cache: true
       - run: uv sync --extra dev --locked
+      - name: Build reference APKs before starting the emulator
+        run: >-
+          ANDROID_SDK_ROOT="$ANDROID_HOME"
+          FLUTTER_BIN="$FLUTTER_ROOT/bin/flutter"
+          ./scripts/reference-apps-build.sh
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
@@ -59,9 +64,11 @@ jobs:
           arch: x86_64
           profile: pixel_6
           target: google_apis
+          disk-size: 4G
           disable-animations: true
           script: >-
             ANDROID_SDK_ROOT="$ANDROID_HOME"
             FLUTTER_BIN="$FLUTTER_ROOT/bin/flutter"
             ANDROID_SERIAL=emulator-5554
+            HAYKAL_REFAPPS_PREBUILT=1
             ./scripts/phase3-reference-check.sh
