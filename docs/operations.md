@@ -10,7 +10,7 @@ and sensitive screen artifacts; create it on encrypted storage with mode `0700`.
 ## Clean installation
 
 ```bash
-uv sync --all-extras --locked
+uv sync --extra dev --locked
 ./scripts/phase5-check.sh
 uv build
 python3 -m venv /opt/haykal/venv

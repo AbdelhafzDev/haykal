@@ -47,6 +47,10 @@ to 95/100. The lean execution sequence is defined in the
 PR.0 has frozen the machine-verifiable production contract; see the
 [PR.0 status](docs/pr0-status.md) and
 [`production-acceptance.json`](config/production-acceptance.json).
+PR.1 implements the pinned, offline-only OmniParser V2 fallback in release
+candidate `0.0.4`; its labelled accuracy/latency evidence and clean hosted wheel
+acceptance are still pending. See the [PR.1 status](docs/pr1-status.md) and
+[third-party notices](THIRD_PARTY_NOTICES.md).
 Follow the phased
 [Path to 95](docs/plan/10-path-to-95.md), the
 [P95.1 safety/privacy record](docs/p95-1-status.md), the

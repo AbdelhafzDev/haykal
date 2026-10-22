@@ -4,7 +4,7 @@
 
 ```bash
 cd /Users/abdelhafz/dev/haykal
-uv sync --all-extras --locked
+uv sync --extra dev --locked
 ./scripts/phase3-check.sh
 ```
 

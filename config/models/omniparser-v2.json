@@ -1,0 +1,159 @@
+{
+  "schema_version": "1.0",
+  "name": "microsoft/OmniParser-v2.0",
+  "upstream_revision": "f55d0750e5b94db2125ef0b45b0fa4a85ddc59b4",
+  "source_repository": "https://github.com/microsoft/OmniParser",
+  "source_commit": "354021201345a96178360b28733573e27269f2de",
+  "files": [
+    {
+      "group": "detector",
+      "repository": "microsoft/OmniParser-v2.0",
+      "revision": "f55d0750e5b94db2125ef0b45b0fa4a85ddc59b4",
+      "remote_path": "icon_detect_v3/LICENSE",
+      "local_path": "icon_detect_v3/LICENSE",
+      "sha256": "sha256:646f8936b8ddcd14e13e578ff6857e368780b0d1a4f6066bee89211923a373e2",
+      "size": 1073,
+      "license": "MIT"
+    },
+    {
+      "group": "detector",
+      "repository": "microsoft/OmniParser-v2.0",
+      "revision": "f55d0750e5b94db2125ef0b45b0fa4a85ddc59b4",
+      "remote_path": "icon_detect_v3/model.pt",
+      "local_path": "icon_detect_v3/model.pt",
+      "sha256": "sha256:11c6cbb77f22569fab22d86c76407a83ec81ab89dbfe28279854822d6e3fb00c",
+      "size": 281182680,
+      "license": "MIT"
+    },
+    {
+      "group": "captioner",
+      "repository": "microsoft/OmniParser-v2.0",
+      "revision": "f55d0750e5b94db2125ef0b45b0fa4a85ddc59b4",
+      "remote_path": "icon_caption/LICENSE",
+      "local_path": "icon_caption/LICENSE",
+      "sha256": "sha256:d9a1b1e30d633d5732ea18e3cba9538d293ebc53e1a9e4e96ab739e0c5c4f1cb",
+      "size": 1140,
+      "license": "MIT"
+    },
+    {
+      "group": "captioner",
+      "repository": "microsoft/OmniParser-v2.0",
+      "revision": "f55d0750e5b94db2125ef0b45b0fa4a85ddc59b4",
+      "remote_path": "icon_caption/config.json",
+      "local_path": "icon_caption/config.json",
+      "sha256": "sha256:1c3c63bb16910b8fa7f3b74fb7ae4c8ffefbe7b008847e2e0b21be6aa807593b",
+      "size": 5748,
+      "license": "MIT"
+    },
+    {
+      "group": "captioner",
+      "repository": "microsoft/OmniParser-v2.0",
+      "revision": "f55d0750e5b94db2125ef0b45b0fa4a85ddc59b4",
+      "remote_path": "icon_caption/generation_config.json",
+      "local_path": "icon_caption/generation_config.json",
+      "sha256": "sha256:a2ef03e814a7ecbf6fcfe7479afd3e7385c6800202fcede1dc1bc01849375464",
+      "size": 292,
+      "license": "MIT"
+    },
+    {
+      "group": "captioner",
+      "repository": "microsoft/OmniParser-v2.0",
+      "revision": "f55d0750e5b94db2125ef0b45b0fa4a85ddc59b4",
+      "remote_path": "icon_caption/model.safetensors",
+      "local_path": "icon_caption/model.safetensors",
+      "sha256": "sha256:01b934b0fe2d07b181e2d07752f16ae27c9d0ea88ddffe13a9a003aa9680f233",
+      "size": 1083916964,
+      "license": "MIT"
+    },
+    {
+      "group": "processor",
+      "repository": "microsoft/Florence-2-base",
+      "revision": "5ca5edf5bd017b9919c05d08aebef5e4c7ac3bac",
+      "remote_path": "LICENSE",
+      "local_path": "florence_processor/LICENSE",
+      "sha256": "sha256:c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "size": 1141,
+      "license": "MIT"
+    },
+    {
+      "group": "processor",
+      "repository": "microsoft/Florence-2-base",
+      "revision": "5ca5edf5bd017b9919c05d08aebef5e4c7ac3bac",
+      "remote_path": "config.json",
+      "local_path": "florence_processor/config.json",
+      "sha256": "sha256:c666d0fe0172d46e115e8fba6cd93cd83714575b33a73005cab8d24ce2a3aa8f",
+      "size": 2430,
+      "license": "MIT"
+    },
+    {
+      "group": "processor",
+      "repository": "microsoft/Florence-2-base",
+      "revision": "5ca5edf5bd017b9919c05d08aebef5e4c7ac3bac",
+      "remote_path": "configuration_florence2.py",
+      "local_path": "florence_processor/configuration_florence2.py",
+      "sha256": "sha256:de2e45a975b3582de05d2f4d963a3e9f9a3d20dccf78d28e0052932a0be93bdf",
+      "size": 15119,
+      "license": "Apache-2.0"
+    },
+    {
+      "group": "processor",
+      "repository": "microsoft/Florence-2-base",
+      "revision": "5ca5edf5bd017b9919c05d08aebef5e4c7ac3bac",
+      "remote_path": "modeling_florence2.py",
+      "local_path": "florence_processor/modeling_florence2.py",
+      "sha256": "sha256:5162bf465e61b6e29cc113a467630ec3cb56ed8e4d46eb6207157f10fb9b8a24",
+      "size": 127455,
+      "license": "Apache-2.0"
+    },
+    {
+      "group": "processor",
+      "repository": "microsoft/Florence-2-base",
+      "revision": "5ca5edf5bd017b9919c05d08aebef5e4c7ac3bac",
+      "remote_path": "preprocessor_config.json",
+      "local_path": "florence_processor/preprocessor_config.json",
+      "sha256": "sha256:2f5921bbc53c7cc04251e1027b45b1cec726276be6db23d1bb40641bfbe2cf29",
+      "size": 806,
+      "license": "MIT"
+    },
+    {
+      "group": "processor",
+      "repository": "microsoft/Florence-2-base",
+      "revision": "5ca5edf5bd017b9919c05d08aebef5e4c7ac3bac",
+      "remote_path": "processing_florence2.py",
+      "local_path": "florence_processor/processing_florence2.py",
+      "sha256": "sha256:f146023a507c009f425a49ee39aa037f4f25c64e14336e3e4f3f1d7377a68e98",
+      "size": 48676,
+      "license": "Apache-2.0"
+    },
+    {
+      "group": "processor",
+      "repository": "microsoft/Florence-2-base",
+      "revision": "5ca5edf5bd017b9919c05d08aebef5e4c7ac3bac",
+      "remote_path": "tokenizer.json",
+      "local_path": "florence_processor/tokenizer.json",
+      "sha256": "sha256:847bbeab6174d66a88898f729d52fa8d355fafe1bea101cf960dd404581df70e",
+      "size": 1355863,
+      "license": "MIT"
+    },
+    {
+      "group": "processor",
+      "repository": "microsoft/Florence-2-base",
+      "revision": "5ca5edf5bd017b9919c05d08aebef5e4c7ac3bac",
+      "remote_path": "tokenizer_config.json",
+      "local_path": "florence_processor/tokenizer_config.json",
+      "sha256": "sha256:79ffcf43af8ebda99d165f61d243180da2e2639952e41e71e11611c18770489c",
+      "size": 34,
+      "license": "MIT"
+    },
+    {
+      "group": "processor",
+      "repository": "microsoft/Florence-2-base",
+      "revision": "5ca5edf5bd017b9919c05d08aebef5e4c7ac3bac",
+      "remote_path": "vocab.json",
+      "local_path": "florence_processor/vocab.json",
+      "sha256": "sha256:394fdc63c71aabe0a9b97117f5d62fb5fcc4d59b2b3ea929a3929e6a53217b3c",
+      "size": 1099884,
+      "license": "MIT"
+    }
+  ]
+}

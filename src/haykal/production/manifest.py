@@ -160,10 +160,16 @@ class ModelArtifact(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     name: Annotated[str, Field(min_length=1)]
-    role: Literal["detector", "captioner"]
+    role: Literal["detector", "captioner", "processor"]
     upstream_revision: GitObject
     sha256: Sha256
-    license: Literal["MIT"]
+    license: Literal["MIT", "MIT AND Apache-2.0"]
+
+    @model_validator(mode="after")
+    def require_mit_omniparser_weights(self) -> ModelArtifact:
+        if self.role in {"detector", "captioner"} and self.license != "MIT":
+            raise ValueError("OmniParser detector and captioner artifacts must be MIT")
+        return self
 
 
 class PerceptionContract(BaseModel):
@@ -182,8 +188,14 @@ class PerceptionContract(BaseModel):
         roles = {artifact.role for artifact in self.model_artifacts}
         if self.fallback == "none" and self.model_artifacts:
             raise ValueError("model artifacts are not allowed when fallback is disabled")
-        if self.fallback == "omniparser_v2" and roles != {"detector", "captioner"}:
-            raise ValueError("OmniParser V2 requires one detector and one captioner role")
+        if self.fallback == "omniparser_v2" and roles != {
+            "detector",
+            "captioner",
+            "processor",
+        }:
+            raise ValueError(
+                "OmniParser V2 requires one detector, one captioner, and one processor role"
+            )
         if len(roles) != len(self.model_artifacts):
             raise ValueError("perception model roles must be unique")
         return self

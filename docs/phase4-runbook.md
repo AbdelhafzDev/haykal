@@ -4,7 +4,7 @@
 
 ```bash
 cd /Users/abdelhafz/dev/haykal
-uv sync --all-extras --locked
+uv sync --extra dev --locked
 uv run python -m haykal.contracts.schema --output schemas/v1
 uv run pytest
 uv run ruff format --check src tests

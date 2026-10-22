@@ -27,7 +27,7 @@ The repository contains the executable M0 foundation:
 ## Run the software-only checks
 
 ```bash
-uv sync --all-extras
+uv sync --extra dev
 uv lock
 ./scripts/m0-check.sh
 ```

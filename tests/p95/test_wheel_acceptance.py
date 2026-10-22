@@ -31,9 +31,7 @@ def _evidence(
         )
     )
     checksum = hashlib.sha256(manifest.read_bytes()).hexdigest()
-    (root / "evidence-sha256.txt").write_text(
-        f"{checksum}  acceptance-manifest.json\n"
-    )
+    (root / "evidence-sha256.txt").write_text(f"{checksum}  acceptance-manifest.json\n")
     return root
 
 

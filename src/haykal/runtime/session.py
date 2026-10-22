@@ -29,7 +29,7 @@ from haykal.execution import ActionRunner
 from haykal.execution.risk import ValidatedApproval
 from haykal.extraction import ExtractionEngine, ExtractionPipeline
 from haykal.perception import PerceptionAdapter, semantic_content_digest
-from haykal.resolver import TargetResolver
+from haykal.resolver import TargetNotFound, TargetResolver
 from haykal.scene import ElementIdentityTracker, ObservationService, SceneBuilder
 from haykal.scene.observer import ObservationCapture
 from haykal.traces import TraceStore
@@ -138,7 +138,11 @@ class RuntimeSession:
         finally:
             self._opened = False
 
-    async def capture(self) -> SceneFrame:
+    async def capture(
+        self,
+        *,
+        require_sources: tuple[Literal["accessibility", "ocr", "vision"], ...] = ("accessibility",),
+    ) -> SceneFrame:
         """Implement SceneFrameSource for bounded verification polling."""
 
         self._require_open()
@@ -147,6 +151,7 @@ class RuntimeSession:
             capture.observation,
             hierarchy_xml=capture.hierarchy_xml,
             screenshot_png=capture.screenshot_png,
+            require_sources=require_sources,
         )
         self._remember(_SceneRecord(built.scene, capture))
         return SceneFrame(
@@ -155,9 +160,12 @@ class RuntimeSession:
             screenshot_png=capture.screenshot_png,
         )
 
-    async def observe(self) -> SemanticScene:
+    async def observe(self, *, require_vision: bool = False) -> SemanticScene:
         async with self._lock:
-            return (await self.capture()).scene
+            sources: tuple[Literal["accessibility", "ocr", "vision"], ...] = (
+                ("accessibility", "vision") if require_vision else ("accessibility",)
+            )
+            return (await self.capture(require_sources=sources)).scene
 
     async def extract(self, request: ExtractionRequest) -> ExtractionResult:
         async with self._lock:
@@ -339,14 +347,27 @@ class RuntimeSession:
                     "risk": assessment.as_dict(),
                 }
             source = self._source_scene(action, record_anchors)
-            decision = self._resolver.resolve(
-                action.target,
-                pre_scene,
-                action_kind=action.kind,
-                policy=action.resolution,
-                source_scene=source,
-                record_anchors=record_anchors,
-            )
+            try:
+                decision = self._resolver.resolve(
+                    action.target,
+                    pre_scene,
+                    action_kind=action.kind,
+                    policy=action.resolution,
+                    source_scene=source,
+                    record_anchors=record_anchors,
+                )
+            except TargetNotFound:
+                if not await self._augment_current_with_vision():
+                    raise
+                pre_scene = self._record().scene
+                decision = self._resolver.resolve(
+                    action.target,
+                    pre_scene,
+                    action_kind=action.kind,
+                    policy=action.resolution,
+                    source_scene=self._source_scene(action, record_anchors),
+                    record_anchors=record_anchors,
+                )
             assessment = self._runner.assess(action, pre_scene, decision.target)
             return {
                 "accepted": True,
@@ -400,6 +421,19 @@ class RuntimeSession:
                 trace_id=effective_trace_id,
             )
             pre_scene = self._record().scene
+            if action.target is not None and action.target.selector is not None:
+                try:
+                    self._resolver.resolve(
+                        action.target,
+                        pre_scene,
+                        action_kind=action.kind,
+                        policy=action.resolution,
+                        source_scene=self._source_scene(action, record_anchors),
+                        record_anchors=record_anchors,
+                    )
+                except TargetNotFound:
+                    if await self._augment_current_with_vision():
+                        pre_scene = self._record().scene
             return await self._runner.execute(
                 action,
                 pre_scene,
@@ -409,6 +443,25 @@ class RuntimeSession:
                 approval=approval,
                 record_anchors=record_anchors,
             )
+
+    async def _augment_current_with_vision(self) -> bool:
+        record = self._record()
+        if (
+            not self._builder.has_adapter("vision")
+            or "vision" in record.scene.quality.fallbacks_used
+        ):
+            return False
+        built = await self._builder.build(
+            record.capture.observation,
+            hierarchy_xml=record.capture.hierarchy_xml,
+            screenshot_png=record.capture.screenshot_png,
+            require_sources=("accessibility", "vision"),
+            scene_revision=record.scene.revision + 1,
+        )
+        if "vision" not in built.scene.quality.fallbacks_used:
+            return False
+        self._remember(_SceneRecord(built.scene, record.capture))
+        return True
 
     async def verify(self, expectation: Expectation) -> ExpectationResult:
         async with self._lock:

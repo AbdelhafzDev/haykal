@@ -60,6 +60,9 @@ class SceneBuilder:
         self._tracker = tracker
         self._max_fallback_skew_ms = max_fallback_skew_ms
 
+    def has_adapter(self, source: SourceKind) -> bool:
+        return source in self._adapters
+
     async def build(
         self,
         observation: RawObservation,

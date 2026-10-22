@@ -13,6 +13,7 @@ from haykal.device import (
     DeviceStateJournal,
     Uiautomator2Backend,
 )
+from haykal.perception import PerceptionAdapter
 from haykal.traces import TraceStore
 
 from .session import RuntimeSession
@@ -73,6 +74,8 @@ def build_runtime(
     session_id: str,
     state_directory: str | Path,
     heartbeat_s: float = 20.0,
+    ocr: PerceptionAdapter | None = None,
+    vision: PerceptionAdapter | None = None,
 ) -> ManagedRuntimeSession:
     root = Path(state_directory)
     root.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -92,6 +95,8 @@ def build_runtime(
         backend=backend,
         artifact_store=ArtifactStore(artifacts_path),
         trace_store=TraceStore(database),
+        ocr=ocr,
+        vision=vision,
         lease_store=leases,
         lease=lease,
         heartbeat_s=heartbeat_s,

@@ -8,7 +8,11 @@ from haykal.transports.mcp import create_mcp_server
 
 
 class Session:
-    async def observe(self) -> SemanticScene:
+    def __init__(self) -> None:
+        self.required_vision = False
+
+    async def observe(self, *, require_vision: bool = False) -> SemanticScene:
+        self.required_vision = require_vision
         return SemanticScene(
             scene_id="scene",
             session_id="session",
@@ -29,3 +33,7 @@ async def test_mcp_v2_tool_returns_structured_scene() -> None:
     async with Client(server) as client:
         result = await client.call_tool("observe", {"session_id": "session"})
     assert result.structured_content["scene_id"] == "scene"
+
+    async with Client(server) as client:
+        await client.call_tool("observe", {"session_id": "session", "require_vision": True})
+    assert session.required_vision is True

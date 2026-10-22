@@ -41,7 +41,7 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-      - run: uv sync --all-extras --locked
+      - run: uv sync --extra dev --locked
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \

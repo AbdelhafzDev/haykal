@@ -227,8 +227,17 @@ def create_app(
         return await mutate(request, operation)
 
     async def observe(request: Request) -> Response:
-        async def operation(_body: bytes) -> tuple[int, object]:
-            scene = await session_for(request).observe()
+        async def operation(body: bytes) -> tuple[int, object]:
+            payload = json.loads(body or b"{}")
+            require_vision = payload.get("require_vision", False)
+            if not isinstance(require_vision, bool) or set(payload) - {"require_vision"}:
+                raise ValueError("observe accepts only a boolean require_vision field")
+            session = session_for(request)
+            scene = (
+                await session.observe(require_vision=True)
+                if require_vision
+                else await session.observe()
+            )
             return 200, scene.model_dump(mode="json")
 
         return await mutate(request, operation)

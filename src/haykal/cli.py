@@ -10,7 +10,7 @@ import os
 import sys
 import uuid
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import uvicorn
 import yaml
@@ -35,6 +35,7 @@ from haykal.hardening import (
     run_storage_reliability,
 )
 from haykal.hardening.faults import run_fault_matrix
+from haykal.perception import PerceptionAdapter, build_omniparser_v2_adapter
 from haykal.resolver import AmbiguousTarget, TargetResolutionError, TargetResolver
 from haykal.runtime import build_runtime
 from haykal.skills import PublisherKeyPair, SkillRegistry, TrustPolicy, sign_skill
@@ -52,16 +53,51 @@ def _write(value: object) -> None:
     print(json.dumps(value, ensure_ascii=False, indent=2, default=str))
 
 
+def _vision_adapter(args: argparse.Namespace) -> PerceptionAdapter | None:
+    cache = getattr(args, "omniparser_cache", None)
+    manifest = getattr(args, "omniparser_manifest", None)
+    if cache is None and manifest is None:
+        return None
+    if not cache:
+        raise ValueError("--omniparser-manifest requires --omniparser-cache")
+    return cast(
+        PerceptionAdapter,
+        build_omniparser_v2_adapter(
+            cache_root=cache,
+            manifest_path=manifest,
+            device=args.omniparser_device,
+            timeout_s=args.vision_timeout_s,
+        ),
+    )
+
+
+def _add_omniparser_options(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--omniparser-cache", default=os.environ.get("HAYKAL_OMNIPARSER_CACHE"))
+    parser.add_argument(
+        "--omniparser-manifest", default=os.environ.get("HAYKAL_OMNIPARSER_MANIFEST")
+    )
+    parser.add_argument(
+        "--omniparser-device",
+        default=os.environ.get("HAYKAL_OMNIPARSER_DEVICE", "cuda"),
+    )
+    parser.add_argument(
+        "--vision-timeout-s",
+        type=float,
+        default=float(os.environ.get("HAYKAL_VISION_TIMEOUT_S", "30")),
+    )
+
+
 def _scene(args: argparse.Namespace) -> int:
     async def run() -> SemanticScene:
         session = build_runtime(
             serial=args.device,
             session_id=f"cli_{uuid.uuid4().hex}",
             state_directory=args.state_dir,
+            vision=_vision_adapter(args),
         )
         await session.open()
         try:
-            return await session.observe()
+            return await session.observe(require_vision=args.require_vision)
         finally:
             await session.close()
 
@@ -171,6 +207,7 @@ def _serve(args: argparse.Namespace) -> int:
         raise ValueError("caller and approver credentials must be different")
     traces = TraceStore(root / "runtime.sqlite3")
     ArtifactStore(root / "artifacts")
+    vision = _vision_adapter(args)
 
     async def factory(session_id: str, serial: str) -> Any:
         if args.device_serial and serial != args.device_serial:
@@ -179,6 +216,7 @@ def _serve(args: argparse.Namespace) -> int:
             serial=serial,
             session_id=session_id,
             state_directory=root,
+            vision=vision,
         )
 
     registry = SessionRegistry(factory)
@@ -432,6 +470,7 @@ def _mcp(args: argparse.Namespace) -> int:
             serial=args.device,
             session_id=args.session_id,
             state_directory=root,
+            vision=_vision_adapter(args),
         )
         await session.open()
         try:
@@ -493,6 +532,8 @@ def _parser() -> argparse.ArgumentParser:
     scene.add_argument("--device", required=True)
     scene.add_argument("--json", action="store_true")
     scene.add_argument("--sparse", action="store_true")
+    scene.add_argument("--require-vision", action="store_true")
+    _add_omniparser_options(scene)
     scene.set_defaults(handler=_scene)
 
     resolve = commands.add_parser("resolve", help="dry-run selector resolution")
@@ -594,6 +635,7 @@ def _parser() -> argparse.ArgumentParser:
     serve.add_argument("--allow-remote-behind-tls", action="store_true")
     serve.add_argument("--device-serial", default=os.environ.get("HAYKAL_DEVICE_SERIAL"))
     serve.add_argument("--adb-path", default=os.environ.get("HAYKAL_ADB_PATH"))
+    _add_omniparser_options(serve)
     serve.set_defaults(handler=_serve)
 
     keygen = commands.add_parser("skill-keygen", help="generate an Ed25519 publisher key pair")
@@ -618,6 +660,7 @@ def _parser() -> argparse.ArgumentParser:
     mcp.add_argument("--trust-policy", default=os.environ.get("HAYKAL_TRUST_POLICY"))
     mcp.add_argument("--approval-secret", default=os.environ.get("HAYKAL_APPROVAL_SECRET"))
     mcp.add_argument("--approval-principal")
+    _add_omniparser_options(mcp)
     mcp.set_defaults(handler=_mcp)
     return parser
 

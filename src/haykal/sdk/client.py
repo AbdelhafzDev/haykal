@@ -50,12 +50,18 @@ class HaykalClient:
         )
         return str(payload["session_id"])
 
-    def observe(self, session_id: str, *, idempotency_key: str | None = None) -> SemanticScene:
+    def observe(
+        self,
+        session_id: str,
+        *,
+        require_vision: bool = False,
+        idempotency_key: str | None = None,
+    ) -> SemanticScene:
         return self._model(
             SemanticScene,
             self._post(
                 f"/v1/sessions/{session_id}/observe",
-                {},
+                {"require_vision": require_vision},
                 idempotency_key=idempotency_key,
             ),
         )

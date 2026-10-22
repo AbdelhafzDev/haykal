@@ -29,10 +29,15 @@ def create_mcp_server(
     server = MCPServer("Haykal", instructions="Deterministic Android UI primitives.")
 
     @server.tool()
-    async def observe(session_id: str) -> dict[str, object]:
+    async def observe(session_id: str, require_vision: bool = False) -> dict[str, object]:
         """Capture an evidence-backed semantic UI scene."""
 
-        scene = await session_lookup(session_id).observe()
+        session = session_lookup(session_id)
+        scene = (
+            await session.observe(require_vision=True)
+            if require_vision
+            else await session.observe()
+        )
         return scene.model_dump(mode="json")
 
     @server.tool()

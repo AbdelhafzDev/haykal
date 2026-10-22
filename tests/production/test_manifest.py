@@ -54,7 +54,7 @@ def test_pending_gate_cannot_claim_evidence() -> None:
         )
 
 
-def test_omniparser_requires_mit_detector_and_captioner() -> None:
+def test_omniparser_requires_mit_detector_captioner_and_processor() -> None:
     detector = ModelArtifact(
         name="icon_detect_v3",
         role="detector",
@@ -62,7 +62,7 @@ def test_omniparser_requires_mit_detector_and_captioner() -> None:
         sha256=EVIDENCE_SHA,
         license="MIT",
     )
-    with pytest.raises(ValidationError, match="one detector and one captioner"):
+    with pytest.raises(ValidationError, match="one detector, one captioner, and one processor"):
         PerceptionContract(
             primary="accessibility",
             fallback="omniparser_v2",
@@ -94,12 +94,19 @@ def test_all_evidence_gates_derive_production_and_score_decisions() -> None:
         sha256="sha256:" + "c" * 64,
         license="MIT",
     )
+    processor = ModelArtifact(
+        name="florence_processor",
+        role="processor",
+        upstream_revision=REVISION,
+        sha256="sha256:" + "5" * 64,
+        license="MIT AND Apache-2.0",
+    )
     complete = manifest.model_copy(
         update={
             "perception": PerceptionContract(
                 primary="accessibility",
                 fallback="omniparser_v2",
-                model_artifacts=(detector, captioner),
+                model_artifacts=(detector, captioner, processor),
                 offline_cache_required=True,
                 network_download_allowed=False,
             ),

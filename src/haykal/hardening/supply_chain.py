@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import importlib.metadata
+import json
 import re
 import uuid
 from collections.abc import Mapping
@@ -75,6 +76,7 @@ def build_sbom(project_root: str | Path) -> dict[str, object]:
             }
         )
     components.sort(key=lambda item: (str(item["name"]).casefold(), str(item["version"])))
+    components.extend(_model_components(root))
     lock_digest = _digest(root / "uv.lock")
     return {
         "bomFormat": "CycloneDX",
@@ -92,6 +94,57 @@ def build_sbom(project_root: str | Path) -> dict[str, object]:
         },
         "components": components,
     }
+
+
+def _model_components(root: Path) -> list[dict[str, object]]:
+    """Include pinned model/cache inputs even when the optional ML extra is absent."""
+
+    components: list[dict[str, object]] = []
+    for manifest_path in sorted((root / "config" / "models").glob("*.json")):
+        try:
+            payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        files = payload.get("files") if isinstance(payload, dict) else None
+        if not isinstance(files, list):
+            continue
+        for item in files:
+            if not isinstance(item, dict):
+                continue
+            required = ("repository", "revision", "local_path", "sha256", "license")
+            if not all(isinstance(item.get(key), str) and item[key] for key in required):
+                continue
+            raw_digest = str(item["sha256"])
+            algorithm, separator, content = raw_digest.partition(":")
+            if (
+                separator != ":"
+                or algorithm != "sha256"
+                or not re.fullmatch(r"[0-9a-f]{64}", content)
+            ):
+                continue
+            repository = str(item["repository"])
+            revision = str(item["revision"])
+            local_path = str(item["local_path"])
+            components.append(
+                {
+                    "type": "machine-learning-model",
+                    "bom-ref": (
+                        f"pkg:huggingface/{quote(repository)}@{quote(revision)}#{quote(local_path)}"
+                    ),
+                    "name": f"{repository}/{local_path}",
+                    "version": revision,
+                    "licenses": [{"license": {"name": str(item["license"])}}],
+                    "hashes": [{"alg": "SHA-256", "content": content}],
+                    "properties": [
+                        {
+                            "name": "haykal:model-manifest",
+                            "value": manifest_path.relative_to(root).as_posix(),
+                        },
+                        {"name": "haykal:model-role", "value": str(item.get("group", "unknown"))},
+                    ],
+                }
+            )
+    return components
 
 
 def _installed_version() -> str:

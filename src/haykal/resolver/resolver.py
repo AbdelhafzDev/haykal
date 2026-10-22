@@ -189,8 +189,7 @@ class TargetResolver:
             and self._supports(current, action_kind)
             and _fingerprint_digest(current) == previous_fingerprint
             and (
-                expected_fingerprint is None
-                or _fingerprint_digest(current) == expected_fingerprint
+                expected_fingerprint is None or _fingerprint_digest(current) == expected_fingerprint
             )
         ):
             return ResolutionDecision(
@@ -211,8 +210,7 @@ class TargetResolver:
             and self._supports(element, action_kind)
             and _fingerprint_digest(element) == previous_fingerprint
             and (
-                expected_fingerprint is None
-                or _fingerprint_digest(element) == expected_fingerprint
+                expected_fingerprint is None or _fingerprint_digest(element) == expected_fingerprint
             )
         ]
         if len(exact_resource) == 1:
@@ -226,8 +224,7 @@ class TargetResolver:
             for element in scene.elements
             if self._supports(element, action_kind)
             and (
-                expected_fingerprint is None
-                or _fingerprint_digest(element) == expected_fingerprint
+                expected_fingerprint is None or _fingerprint_digest(element) == expected_fingerprint
             )
         ]
         return self._accept(ranked, scene, policy, stale_rebound=True)

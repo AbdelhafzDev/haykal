@@ -6,11 +6,13 @@ import pytest
 
 from haykal.artifacts import ArtifactStore
 from haykal.contracts.action import ActionTarget, Risk, SemanticAction
-from haykal.contracts.common import SettlePolicy
+from haykal.contracts.common import Bounds, SettlePolicy
 from haykal.contracts.expectation import Expectation
-from haykal.contracts.selector import ResourceMatch, Selector
+from haykal.contracts.scene import ElementState
+from haykal.contracts.selector import ResourceMatch, Selector, TextMatch
 from haykal.device import DeviceHealth, DeviceSnapshot
 from haykal.device.single_shot import DispatchOutcome
+from haykal.perception import AdapterIdentity, PerceptionCandidate, StaticPerceptionAdapter
 from haykal.runtime import RuntimeSession
 from haykal.traces import TraceStore
 
@@ -107,3 +109,112 @@ async def test_shared_runtime_observe_resolve_act_verify_trace(tmp_path: Path) -
     ]
     await runtime.close()
     assert backend.opened is False
+
+
+@pytest.mark.asyncio
+async def test_observe_can_explicitly_require_vision_without_changing_scene_contract(
+    tmp_path: Path,
+) -> None:
+    backend = Backend()
+    vision = StaticPerceptionAdapter(
+        "vision",
+        AdapterIdentity(
+            name="fixture-vision",
+            version="1",
+            model_digest="sha256:" + "a" * 64,
+        ),
+        [
+            PerceptionCandidate(
+                source="vision",
+                source_id="vision:offer",
+                bounds=Bounds(left=220, top=20, right=390, bottom=120),
+                role="button",
+                label="عرض بيتزا",
+                state=ElementState(
+                    enabled=True,
+                    visible=True,
+                    focused=False,
+                    scrollable=False,
+                ),
+                actions=("tap",),
+            )
+        ],
+    )
+    runtime = RuntimeSession(
+        session_id="session",
+        backend=backend,
+        artifact_store=ArtifactStore(tmp_path / "artifacts"),
+        trace_store=TraceStore(tmp_path / "trace.sqlite3"),
+        vision=vision,
+    )
+    await runtime.open()
+    scene = await runtime.observe(require_vision=True)
+    await runtime.close()
+
+    assert scene.quality.fallbacks_used == ["vision"]
+    assert any(element.label == "عرض بيتزا" for element in scene.elements)
+
+
+@pytest.mark.asyncio
+async def test_missing_accessibility_target_triggers_vision_before_risk_assessment(
+    tmp_path: Path,
+) -> None:
+    class RichBackend(Backend):
+        async def hierarchy(self) -> str:
+            return """<hierarchy rotation="0">
+              <node index="0" text="التالي" resource-id="dev.haykal:id/next"
+                class="android.widget.Button" package="dev.haykal" content-desc="التالي"
+                clickable="true" enabled="true" scrollable="false" bounds="[10,20][210,120]" />
+              <node index="1" text="رجوع" resource-id="dev.haykal:id/back"
+                class="android.widget.Button" package="dev.haykal" content-desc="رجوع"
+                clickable="true" enabled="true" scrollable="false" bounds="[10,140][210,240]" />
+            </hierarchy>"""
+
+    vision = StaticPerceptionAdapter(
+        "vision",
+        AdapterIdentity(
+            name="fixture-vision",
+            version="1",
+            model_digest="sha256:" + "a" * 64,
+        ),
+        [
+            PerceptionCandidate(
+                source="vision",
+                source_id="vision:offer",
+                bounds=Bounds(left=220, top=20, right=390, bottom=120),
+                role="button",
+                label="ادفع",
+                state=ElementState(
+                    enabled=True,
+                    visible=True,
+                    focused=False,
+                    scrollable=False,
+                ),
+                actions=("tap",),
+            )
+        ],
+    )
+    runtime = RuntimeSession(
+        session_id="session",
+        backend=RichBackend(),
+        artifact_store=ArtifactStore(tmp_path / "artifacts"),
+        trace_store=TraceStore(tmp_path / "trace.sqlite3"),
+        vision=vision,
+    )
+    await runtime.open()
+    initial = await runtime.observe()
+    assert initial.quality.fallbacks_used == []
+    decision = await runtime.resolve(
+        SemanticAction(
+            action_id="resolve-offer",
+            kind="tap",
+            target=ActionTarget(selector=Selector(label=TextMatch(equals="ادفع"))),
+            risk=Risk(category="navigation", gate="none"),
+        )
+    )
+    await runtime.close()
+
+    assert decision["accepted"] is True
+    assert runtime.current_scene().quality.fallbacks_used == ["vision"]
+    assert decision["risk"]["effective"]["category"] == "purchase"
+    assert decision["risk"]["policy_decision"] == "approval_required"

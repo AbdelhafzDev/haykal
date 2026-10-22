@@ -23,6 +23,7 @@ class Session:
     def __init__(self, session_id: str) -> None:
         self.session_id = session_id
         self.opened = False
+        self.required_vision = False
 
     async def open(self) -> None:
         self.opened = True
@@ -30,7 +31,8 @@ class Session:
     async def close(self) -> None:
         self.opened = False
 
-    async def observe(self) -> SemanticScene:
+    async def observe(self, *, require_vision: bool = False) -> SemanticScene:
+        self.required_vision = require_vision
         return SemanticScene(
             scene_id="scene",
             session_id=self.session_id,
@@ -256,6 +258,12 @@ def test_primitive_routes_trace_and_sse(tmp_path: Path) -> None:
             f"{prefix}/observe", json={}, headers={**auth, "Idempotency-Key": "2"}
         )
         assert observed.json()["scene_id"] == "scene"
+        visual = client.post(
+            f"{prefix}/observe",
+            json={"require_vision": True},
+            headers={**auth, "Idempotency-Key": "2-vision"},
+        )
+        assert visual.status_code == 200
         extracted = client.post(
             f"{prefix}/extract",
             json={
