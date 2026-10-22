@@ -38,6 +38,7 @@ Every action produces enough evidence to answer:
 | [08-skill-authoring.md](08-skill-authoring.md) | Authoring tools, the one-day exercise, authoring rules |
 | [09-readiness-scorecard.md](09-readiness-scorecard.md) | Weighted 95/100 plan evaluation and the five M0 evidence points still unearned |
 | [10-path-to-95.md](10-path-to-95.md) | Post-Phase-5 remediation and evidence phases from the 70/100 implementation review to a defensible 95/100 |
+| [11-production-ready-mvp.md](11-production-ready-mvp.md) | Lean execution plan from the accepted 91/100 release to a single-tenant production pilot, including OmniParser V2 fallback |
 | [examples/jahez-pizza-offers-lifecycle.md](examples/jahez-pizza-offers-lifecycle.md) | Read-only skill with extraction and escalation |
 | [../../jahez-order-pizza-lifecycle.md](../../jahez-order-pizza-lifecycle.md) | Purchase skill with selection policy, approval-bound dispatch, and reconciliation |
 
