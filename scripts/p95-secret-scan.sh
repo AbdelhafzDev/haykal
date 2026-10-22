@@ -16,6 +16,9 @@ from pathlib import Path
 report = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
 results = report.get("results", {})
 allowlisted_public_checksums = {
+    ("config/models/omniparser-v2.json", 4, "Hex High Entropy String"),
+    ("config/models/omniparser-v2.json", 6, "Hex High Entropy String"),
+    ("config/models/omniparser-v2.json", 71, "Hex High Entropy String"),
     ("config/production-acceptance.json", 7, "Hex High Entropy String"),
     ("config/production-acceptance.json", 8, "Hex High Entropy String"),
     ("toolchains/flutter-sdk.json", 6, "Hex High Entropy String"),
