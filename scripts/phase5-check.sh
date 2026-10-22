@@ -48,3 +48,4 @@ wheel="$(find dist -maxdepth 1 -name '*.whl' -print | sort | tail -n 1)"
 uv pip install --python "$temporary/venv/bin/python" "$wheel" >/dev/null
 "$temporary/venv/bin/haykal" --state-dir "$temporary/clean-state" diagnostics \
   --storage-only >/dev/null
+"$temporary/venv/bin/haykal-evaluate-fallback" --help >/dev/null

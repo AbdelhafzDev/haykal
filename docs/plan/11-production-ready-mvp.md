@@ -1,6 +1,6 @@
 # Production-ready MVP plan
 
-Status: **ready to execute**
+Status: **in progress — PR.1 implementation complete; model evidence pending**
 
 Starting point: Haykal `0.0.3` has passed hosted wheel-only acceptance on clean
 Android API 34 and 35 VMs. The accepted runtime commit is

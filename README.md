@@ -50,6 +50,7 @@ PR.0 has frozen the machine-verifiable production contract; see the
 PR.1 implements the pinned, offline-only OmniParser V2 fallback in release
 candidate `0.0.4`; its labelled accuracy/latency evidence and clean hosted wheel
 acceptance are still pending. See the [PR.1 status](docs/pr1-status.md) and
+[fallback evaluation runbook](docs/pr1-fallback-evaluation.md), plus the
 [third-party notices](THIRD_PARTY_NOTICES.md).
 Follow the phased
 [Path to 95](docs/plan/10-path-to-95.md), the

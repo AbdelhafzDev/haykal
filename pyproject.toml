@@ -53,6 +53,7 @@ haykal-m4 = "haykal.m4.skill_smoke:main"
 haykal-schema = "haykal.contracts.schema:main"
 haykal-matjar-oracle = "haykal.benchmarks.matjar_oracle:main"
 haykal-prepare-omniparser = "haykal.perception.cache_cli:main"
+haykal-evaluate-fallback = "haykal.evaluation.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/haykal"]

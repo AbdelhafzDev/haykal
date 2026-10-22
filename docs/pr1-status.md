@@ -23,6 +23,10 @@ Release candidate: `0.0.4`
   caller declares navigation risk.
 - Model files appear in the generated SBOM even when the optional ML packages
   are not installed.
+- `haykal-evaluate-fallback` now runs the production adapter and resolver over a
+  digest-pinned labelled dataset and fails the release gate on accuracy,
+  irreversible mis-resolution, unsafe ambiguity, or p95 latency. See the
+  [evaluation runbook](pr1-fallback-evaluation.md).
 
 ## Offline setup
 
