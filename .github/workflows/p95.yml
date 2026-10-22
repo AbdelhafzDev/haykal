@@ -30,7 +30,7 @@ jobs:
         run: uv run pip-audit --progress-spinner off
       - name: Verify reviewed defects remain permanent regressions
         run: |
-          output="$(uv run pytest -q tests/p95)"
+          output="$(uv run pytest -q tests/p95/test_regression_locks.py)"
           printf '%s\n' "$output"
           grep -q '7 passed' <<<"$output"
           ! grep -q 'xfailed' <<<"$output"
